@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Test caméra</title>
+<link rel="stylesheet" href="css/camera.css">
+</head>
+<body>
+<main class="page">
+  <section class="scene">
+    <div class="cadre-canvas"><canvas id="ecran" width="960" height="540"></canvas>
+      <p id="message" class="message">Clique sur « Démarrer la caméra ».</p>
+    </div>
+    <p id="etat" class="etat"></p>
+  </section>
+  <aside class="panneau" aria-label="Réglages">
+    <div class="groupe">
+      <button type="button" id="demarrer" class="bouton plein">Démarrer la caméra</button>
+      <label class="bouton" for="photo">Ou une photo</label>
+      <input id="photo" type="file" accept="image/*" hidden>
+    </div>
+    <div class="groupe colonne">
+      <label for="effet">Effet</label>
+      <select id="effet">
+        <option value="bw">Noir et blanc</option>
+        <option value="seuil">Seuil (2 couleurs)</option>
+        <option value="aplats">Aplats (2 à 4 couleurs)</option>
+        <option value="trame">Trame de points</option>
+      </select>
+      <label for="zone">Zone de l'effet</label>
+      <select id="zone">
+        <option value="plein">Tout l'écran</option>
+        <option value="cadre">Dans un cadre (doigts ou souris)</option>
+      </select>
+      <label class="case"><input type="checkbox" id="main"> Suivi des mains</label>
+      <label class="case"><input type="checkbox" id="silhouette"> Silhouette (fond à part)</label>
+      <label class="case"><input type="checkbox" id="inverser"> Inverser la silhouette</label>
+    </div>
+    <div class="groupe colonne" id="curseurs"></div>
+    <div class="groupe couleurs" id="couleurs"></div>
+    <div class="groupe colonne">
+      <button type="button" id="copier" class="bouton">Copier les réglages</button>
+      <textarea id="json" rows="5" readonly aria-label="Réglages en texte"></textarea>
+    </div>
+    <p class="aide">Cadre avec les doigts : forme un rectangle avec le pouce et l'index de chaque main. Sans caméra ou sans mains : clique et glisse sur l'image.</p>
+  </aside>
+</main>
+<script type="module" src="js/camera.js"></script>
+</body>
+</html>
