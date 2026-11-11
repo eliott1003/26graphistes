@@ -101,6 +101,8 @@ function lisMains(t) {
   if (!r.landmarks || r.landmarks.length < 2) return;
   const p = [];
   for (const h of r.landmarks.slice(0, 2)) for (const i of [4, 8]) p.push({ x: (miroir ? 1 - h[i].x : h[i].x) * L, y: h[i].y * H });
+  const cx = p.reduce((a, q) => a + q.x, 0) / 4, cy = p.reduce((a, q) => a + q.y, 0) / 4;
+  p.sort((a, b) => Math.atan2(a.y - cy, a.x - cx) - Math.atan2(b.y - cy, b.x - cx));
   const xs = p.map((q) => q.x), ys = p.map((q) => q.y);
   cadreMains = { x: Math.min(...xs), y: Math.min(...ys), w: Math.max(...xs) - Math.min(...xs), h: Math.max(...ys) - Math.min(...ys), pts: p };
 }
@@ -145,6 +147,17 @@ function appliquer(x, y, w, h) {
   ctx.putImageData(effet(ctx.getImageData(x, y, w, h), w), x, y);
 }
 
+function appliquerQuad(c) {
+  const x = Math.max(0, Math.round(c.x)), y = Math.max(0, Math.round(c.y));
+  const w = Math.min(L - x, Math.round(c.w)), h = Math.min(H - y, Math.round(c.h));
+  if (w < 4 || h < 4) return;
+  const oc = new OffscreenCanvas(w, h), ox = oc.getContext("2d");
+  ox.putImageData(effet(ctx.getImageData(x, y, w, h), w), 0, 0);
+  ctx.save(); ctx.beginPath();
+  c.pts.forEach((q, i) => i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y));
+  ctx.closePath(); ctx.clip(); ctx.drawImage(oc, x, y); ctx.restore();
+}
+
 // Boucle
 let derniere = -1;
 function dessiner(t) {
@@ -162,8 +175,11 @@ function dessiner(t) {
   }
   const cadre = R.main && cadreMains ? cadreMains : cadreSouris;
   if (R.zone === "cadre" && cadre) {
-    appliquer(cadre.x, cadre.y, cadre.w, cadre.h);
-    ctx.strokeStyle = "#fff"; ctx.lineWidth = 3; ctx.strokeRect(cadre.x, cadre.y, cadre.w, cadre.h);
+    if (cadre.pts) appliquerQuad(cadre);
+    else appliquer(cadre.x, cadre.y, cadre.w, cadre.h);
+    ctx.strokeStyle = "#fff"; ctx.lineWidth = 3;
+    if (cadre.pts) { ctx.beginPath(); cadre.pts.forEach((q, i) => i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y)); ctx.closePath(); ctx.stroke(); }
+    else ctx.strokeRect(cadre.x, cadre.y, cadre.w, cadre.h);
     if (cadre.pts) for (const p of cadre.pts) { ctx.fillStyle = "#e2001a"; ctx.beginPath(); ctx.arc(p.x, p.y, 7, 0, 6.283); ctx.fill(); }
   } else if (R.zone === "plein") appliquer(0, 0, L, H);
 
