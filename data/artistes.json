@@ -1,0 +1,26 @@
+{
+  "artistes": [
+    { "lettre": "B", "id": "b-bass", "nom": "Saul Bass", "court": "Bass", "statut": "prevu" },
+    { "lettre": "C", "id": "c-cassandre", "nom": "A. M. Cassandre", "court": "Cassandre", "statut": "prevu" },
+    { "lettre": "F", "id": "f-favre", "nom": "Malika Favre", "court": "Favre", "statut": "prevu" },
+    { "lettre": "J", "id": "j-carlu", "nom": "Jean Carlu", "court": "Carlu", "statut": "prevu" },
+    {
+      "lettre": "K", "id": "k-kruger", "nom": "Barbara Kruger", "court": "Kruger", "statut": "ouvert",
+      "module": "artistes/k-kruger.js",
+      "dates": "Née en 1945 à Newark, États-Unis. Vit entre New York et Los Angeles.",
+      "actuel": true,
+      "couleurs": { "fond": "#0d0d0d", "encre": "#ffffff", "accent": "#e2001a" },
+      "fiche": [
+        { "titre": "Qui", "texte": "Artiste américaine. Elle commence comme graphiste et iconographe dans la presse magazine, chez Condé Nast : c’est là qu’elle apprend à recadrer une image et à faire tenir une idée en quelques mots." },
+        { "titre": "Méthode", "texte": "Une photo en noir et blanc trouvée dans la presse, recadrée serré. Par-dessus, une phrase courte en Futura Bold Oblique, blanc sur rouge. La phrase dit « tu », « je », « nous » : elle parle à celui qui regarde et retourne contre la publicité ses propres armes." },
+        { "titre": "Œuvres", "liste": ["Untitled (Your gaze hits the side of my face), 1981", "Untitled (I shop therefore I am), 1987", "Untitled (Your body is a battleground), 1989"] },
+        { "titre": "En ce moment", "texte": "Exposée à la Bourse de Commerce – Pinault Collection, à Paris, jusqu’en janvier 2027." }
+      ],
+      "geste": { "titre": "Colle ta phrase sur ton image", "consigne": "Prends un selfie ou choisis une photo, puis écris une phrase courte qui s’adresse à quelqu’un. Elle passe en noir et blanc, ta phrase en blanc sur rouge." },
+      "image": { "src": "", "legende": "", "depot": "img/k/01.jpg" }
+    },
+    { "lettre": "M", "id": "m-bouvet", "nom": "Michel Bouvet", "court": "Bouvet", "statut": "prevu" },
+    { "lettre": "R", "id": "r-rand", "nom": "Paul Rand", "court": "Rand", "statut": "prevu" },
+    { "lettre": "S", "id": "s-scher", "nom": "Paula Scher", "court": "Scher", "statut": "prevu" }
+  ]
+}

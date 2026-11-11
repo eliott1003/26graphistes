@@ -1,0 +1,206 @@
+/* ==========================================================
+   SYSTÈME FIXE — site « clavier » (25 graphistes)
+   Idée de mise en page : un clavier AZERTY posé en bas de l'écran,
+   le titre au-dessus ; chaque touche ouvre un atelier qui reprend
+   la même planche, recolorée par les 3 couleurs de l'artiste.
+   Trois directions de DA (data-da sur <body>) : riso / valentine / specimen.
+   ========================================================== */
+
+@font-face{font-family:"Jost";src:url("../fonts/jost-latin-900-italic.woff2") format("woff2");font-weight:900;font-style:italic;font-display:swap}
+@font-face{font-family:"Archivo";src:url("../fonts/archivo-latin-400-normal.woff2") format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"Archivo";src:url("../fonts/archivo-latin-600-normal.woff2") format("woff2");font-weight:600;font-display:swap}
+@font-face{font-family:"Archivo";src:url("../fonts/archivo-latin-800-normal.woff2") format("woff2");font-weight:800;font-display:swap}
+@font-face{font-family:"DM Mono";src:url("../fonts/dm-mono-latin-400-normal.woff2") format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"DM Mono";src:url("../fonts/dm-mono-latin-500-normal.woff2") format("woff2");font-weight:500;font-display:swap}
+@font-face{font-family:"Anton";src:url("../fonts/anton-latin-400-normal.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"Bowlby One";src:url("../fonts/bowlby-one-latin-400-normal.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"Alfa Slab One";src:url("../fonts/alfa-slab-one-latin-400-normal.woff2") format("woff2");font-display:swap}
+
+/* ---------- Jetons : DA 1 « Riso » par défaut ---------- */
+:root{
+  color-scheme:light;
+  --fond:#f3efe4;            /* papier */
+  --encre:#2438c9;           /* encre bleue : tout le texte */
+  --encre-2:#2438c9a6;
+  --c1:#ff4d9d;              /* rose fluo */
+  --c2:#2438c9;              /* bleu */
+  --t1:var(--c1); --t2:var(--c2); --tp:var(--fond);   /* encres du titre + papier */
+  --touche-rayon:9px;
+  --police-texte:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --police-etiquette:"DM Mono",ui-monospace,Menlo,Consolas,monospace;
+  --gouttiere:16px;
+}
+body[data-da="valentine"]{
+  --fond:#d3271d; --encre:#fff3e4; --encre-2:#fff3e4b8;
+  --c1:#fff3e4; --c2:#171110;
+  --t1:#d3271d; --t2:#171110; --tp:#f6f0e2;
+  --touche-rayon:50%;
+}
+body[data-da="specimen"]{
+  --fond:#fbfbf8; --encre:#0c0c0c; --encre-2:#0c0c0c99;
+  --c1:#ff4a1c; --c2:#0c0c0c;
+  --t1:#ff4a1c; --t2:#0c0c0c; --tp:#fbfbf8;
+  --touche-rayon:0;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--fond);color:var(--encre);font-family:var(--police-texte);font-size:16px;line-height:1.45;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent;overflow-x:hidden}
+button,input,textarea{font:inherit;color:inherit}
+[hidden]{display:none!important}
+:focus-visible{outline:3px solid var(--c1);outline-offset:3px}
+.etiquette{font-family:var(--police-etiquette);font-size:11px;letter-spacing:.08em;text-transform:uppercase;margin:0}
+
+/* ---------- Accueil ---------- */
+#accueil{min-height:100%;display:flex;flex-direction:column;gap:18px;padding:20px var(--gouttiere) 14px;max-width:1120px;margin:0 auto;position:relative}
+.entete{position:relative;display:flex;flex-direction:column;gap:12px}
+.titre{margin:0;display:flex;flex-wrap:wrap;gap:6px 6px;line-height:0}
+.tl{width:clamp(70px,27vw,146px);display:flex;flex-direction:column;gap:4px;position:relative}
+.tl svg{width:100%;height:auto;display:block;overflow:visible}
+.tl small{font-family:var(--police-etiquette);font-size:9px;line-height:1.2;letter-spacing:.1em;text-transform:uppercase;color:var(--encre-2)}
+.chapo{margin:0;max-width:34em;font-size:15px;font-weight:600;text-wrap:balance}
+.pousse{flex:1 1 auto;min-height:4px}
+
+/* ---------- Clavier ---------- */
+.clavier{display:flex;flex-direction:column;gap:6px;width:100%;max-width:860px;margin:0 auto;position:relative}
+.rangee{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:5px}
+.rangee:nth-child(3) .touche:first-child{grid-column-start:3}
+.touche{position:relative;aspect-ratio:1/1.28;min-width:0;padding:0;border:1.5px solid var(--c2);border-radius:var(--touche-rayon);background:transparent;color:var(--c2);cursor:pointer;display:grid;place-items:center;font-family:var(--police-texte);font-weight:800;font-size:clamp(17px,4.6vw,30px);line-height:1;transition:transform .08s,box-shadow .08s;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+.touche .t-nom,.touche .t-svg{display:none}
+.touche[data-statut="vide"]{opacity:.38;cursor:default}
+.touche[data-statut="prevu"]{background:repeating-linear-gradient(135deg,var(--c1) 0 2px,transparent 2px 7px)}
+.touche[data-statut="ouvert"]{background:var(--c1);box-shadow:4px 4px 0 var(--c2)}
+.touche.enfoncee,.touche:active{transform:translate(3px,3px)}
+.touche[data-statut="ouvert"].enfoncee,.touche[data-statut="ouvert"]:active{box-shadow:1px 1px 0 var(--c2)}
+
+.pied{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 16px;max-width:860px;width:100%;margin:0 auto}
+.astuce .souris{display:none}
+@media (hover:hover) and (pointer:fine){.astuce .souris{display:inline}.astuce .doigt{display:none}}
+.astuce .focus{display:none}
+body.sans-focus .astuce .souris .focus{display:inline}
+.choix-da{display:flex;gap:0;border:1.5px solid currentColor;border-radius:99px;overflow:hidden}
+.choix-da button{border:0;background:transparent;padding:8px 11px;min-height:36px;cursor:pointer;font-family:var(--police-etiquette);font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+.choix-da button[aria-pressed="true"]{background:var(--encre);color:var(--fond)}
+.qr{display:none}
+.index{display:none}
+#annonce{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);max-width:calc(100% - 32px);background:#111;color:#fff;font-family:var(--police-etiquette);font-size:12px;padding:10px 14px;border-radius:6px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:60;text-align:center}
+#annonce.visible{opacity:1;transform:translate(-50%,0)}
+#flot{position:fixed;inset:0;z-index:40;pointer-events:none;background:var(--flot,#000);clip-path:circle(0 at var(--x,50%) var(--y,50%));opacity:1}
+#flot.plein{clip-path:circle(150% at var(--x,50%) var(--y,50%));transition:clip-path .42s cubic-bezier(.7,0,.2,1)}
+#flot.sort{opacity:0;transition:opacity .28s}
+
+@media (min-width:900px){
+  #accueil{padding-top:28px;gap:20px}
+  .clavier{gap:9px}.rangee{gap:9px}
+  .rangee:nth-child(2){transform:translateX(2.2%)}
+  .touche{aspect-ratio:1/1}
+  .touche[data-statut="ouvert"]{box-shadow:6px 6px 0 var(--c2)}
+  .chapo{font-size:18px}
+  .qr{display:flex;flex-direction:column;align-items:flex-end;gap:6px;position:absolute;right:var(--gouttiere);top:28px;z-index:2}
+  .qr svg{width:92px;height:92px;display:block;border-radius:4px}
+  .qr p{max-width:10em;text-align:right;font-size:9px}
+  .entete{margin-right:130px}
+  .clavier,.pied{max-width:760px}
+  body[data-da="riso"] .pousse{min-height:36px}
+  .tl{width:clamp(70px,11.4vw,136px)}
+  body[data-da="valentine"] .entete{margin-right:136px}
+  body[data-da="valentine"] .tl{width:clamp(70px,10.4vw,124px)}
+  body[data-da="specimen"] .touche[data-statut="prevu"]::after{right:6px;top:6px;bottom:auto}
+}
+@media (max-width:899px){
+  body[data-da="valentine"] .tl{width:clamp(56px,23vw,120px)}
+  body[data-da="valentine"] #accueil{gap:14px}
+}
+
+/* ---------- DA 1 · Riso : deux encres, surimpression, grain ---------- */
+body[data-da="riso"] .tl svg .enc{mix-blend-mode:multiply}
+body[data-da="riso"] .pousse{position:relative;min-height:92px;z-index:0}
+body[data-da="riso"] .pousse::before{content:"";position:absolute;right:-28px;top:0;width:clamp(150px,42vw,330px);aspect-ratio:1;border-radius:50%;background:var(--c1);mix-blend-mode:multiply;pointer-events:none}
+body[data-da="riso"] .pousse::after{content:"";position:absolute;right:calc(clamp(150px,42vw,330px) * .52);top:22px;width:clamp(120px,34vw,270px);aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,var(--c2) 0 34%,transparent 36%) 0 0/9px 9px;mix-blend-mode:multiply;pointer-events:none}
+body[data-da="riso"] .entete,body[data-da="riso"] .clavier,body[data-da="riso"] .pied{z-index:1}
+body[data-da="riso"] .touche{background-color:var(--fond)}
+body[data-da="riso"] .touche[data-statut="ouvert"]{background:var(--c1)}
+body[data-da="riso"]::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:30;opacity:.5;mix-blend-mode:multiply;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23g)'/%3E%3C/svg%3E")}
+
+/* ---------- DA 2 · Valentine : la machine à écrire rouge ---------- */
+body[data-da="valentine"]{background:linear-gradient(#dc2e23,#c72218) fixed}
+body[data-da="valentine"] .entete{background:var(--tp);color:#171110;padding:22px 18px 18px;margin:0 6px;transform:rotate(-.7deg);box-shadow:0 14px 0 -6px #0003,0 2px 0 #fff8 inset}
+body[data-da="valentine"] .entete .tl small{color:#17111099}
+body[data-da="valentine"] .chapo{font-family:var(--police-etiquette);font-weight:400;font-size:13px}
+body[data-da="valentine"] .clavier{background:#171110;padding:14px 12px 16px;border-radius:22px;box-shadow:inset 0 4px 10px #000,0 2px 0 #ffffff40}
+body[data-da="valentine"] .touche{aspect-ratio:1;border:0;background:#2b2321;color:#8d817b;font-family:var(--police-etiquette);font-weight:500;box-shadow:0 3px 0 #000}
+body[data-da="valentine"] .touche[data-statut="vide"]{opacity:1}
+body[data-da="valentine"] .touche[data-statut="prevu"]{background:#2b2321;color:#fff3e4;box-shadow:0 3px 0 #000,inset 0 0 0 1.5px #fff3e4}
+body[data-da="valentine"] .touche[data-statut="ouvert"]{background:#fff3e4;color:#171110;box-shadow:0 4px 0 #b3a58f}
+body[data-da="valentine"] .touche.enfoncee,body[data-da="valentine"] .touche:active{transform:translateY(3px);box-shadow:0 0 0 #000}
+body[data-da="valentine"] :focus-visible{outline-color:#fff3e4}
+
+/* ---------- DA 3 · Spécimen : la planche typographique ---------- */
+body[data-da="specimen"] .entete{border-top:2px solid var(--encre);padding-top:12px}
+body[data-da="specimen"] .chapo{font-weight:400}
+body[data-da="specimen"] .clavier,body[data-da="specimen"] .rangee{gap:0}
+body[data-da="specimen"] .rangee:nth-child(2){transform:none}
+body[data-da="specimen"] .touche{border:1px solid var(--encre);margin:0 -1px -1px 0;aspect-ratio:1/1.2;font-weight:400;place-items:start;padding:5px 6px}
+body[data-da="specimen"] .touche[data-statut="vide"]{opacity:1;color:#0c0c0c40}
+body[data-da="specimen"] .touche[data-statut="prevu"]{background:none;font-weight:800}
+body[data-da="specimen"] .touche[data-statut="prevu"]::after{content:"";position:absolute;right:4px;bottom:4px;width:7px;height:7px;border-radius:50%;border:1.5px solid var(--encre)}
+body[data-da="specimen"] .touche[data-statut="ouvert"]{background:var(--t-accent,var(--c1));color:#fff;box-shadow:none;padding:0}
+body[data-da="specimen"] .touche[data-statut="ouvert"] .t-lettre{display:none}
+body[data-da="specimen"] .touche[data-statut="ouvert"] .t-svg{display:block;width:100%;height:100%}
+body[data-da="specimen"] .touche[data-statut="ouvert"] .t-svg svg{width:100%;height:100%;display:block}
+body[data-da="specimen"] .touche.enfoncee,body[data-da="specimen"] .touche:active{transform:none;background:var(--encre);color:var(--fond)}
+body[data-da="specimen"] .index li.ouvert{font-weight:500}
+body[data-da="specimen"] .index{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:2px 16px;list-style:none;margin:0 auto;padding:8px 0 0;border-top:1px solid var(--encre);font-family:var(--police-etiquette);font-size:11px;max-width:760px;width:100%}
+body[data-da="specimen"] .index li{display:flex;gap:8px;white-space:nowrap}
+body[data-da="specimen"] .index b{font-weight:500;width:1.2em}
+body[data-da="specimen"] .index .prevu{color:var(--encre-2)}
+@media (min-width:900px){
+  body[data-da="specimen"] .touche .t-nom{display:block;position:absolute;left:6px;bottom:5px;font-family:var(--police-etiquette);font-size:9px;font-weight:400;letter-spacing:.06em;text-transform:uppercase}
+  body[data-da="specimen"] .touche[data-statut="ouvert"] .t-nom{display:none}
+}
+
+/* ---------- Atelier : la planche commune, recolorée par l'artiste ---------- */
+#atelier{--a-fond:#fff;--a-encre:#111;--a-accent:#e2001a;background:var(--a-fond);color:var(--a-encre);min-height:100%;position:relative;z-index:35}
+#atelier :focus-visible{outline-color:var(--a-accent)}
+.a-barre{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px var(--gouttiere);background:var(--a-fond);border-bottom:1px solid color-mix(in srgb,var(--a-encre) 28%,transparent)}
+.a-barre .groupe{display:flex;gap:6px}
+.a-barre .bouton{white-space:nowrap}
+.a-barre .etiquette{white-space:nowrap}
+.bouton{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:8px 14px;border:1.5px solid currentColor;border-radius:4px;background:transparent;color:inherit;cursor:pointer;font-family:var(--police-etiquette);font-size:12px;letter-spacing:.06em;text-transform:uppercase;text-decoration:none;touch-action:manipulation}
+.bouton.plein{background:var(--a-accent);border-color:var(--a-accent);color:#fff}
+.bouton[disabled]{opacity:.35;cursor:default}
+.a-corps{display:grid;gap:26px;padding:20px var(--gouttiere) 56px;max-width:1120px;margin:0 auto}
+.a-tete{display:grid;grid-template-columns:minmax(120px,42%) 1fr;gap:16px;align-items:end}
+.a-lettre svg{width:100%;height:auto;display:block}
+.a-nom:focus{outline:none}
+.a-nom{margin:6px 0 4px;font-size:clamp(30px,8.4vw,54px);line-height:.95;font-weight:800;letter-spacing:-.01em;text-wrap:balance}
+.a-dates{margin:0;font-size:14px;color:color-mix(in srgb,var(--a-encre) 72%,transparent)}
+.a-geste{display:grid;gap:10px}
+.a-geste h3{margin:0;font-size:24px;line-height:1.1;font-weight:800;text-wrap:balance}
+.a-geste .consigne{margin:0;max-width:36em}
+.a-zone{margin-top:6px}
+.a-fiche{display:grid;gap:16px;max-width:38em}
+.a-fiche section{display:grid;gap:4px;padding-top:10px;border-top:1px solid color-mix(in srgb,var(--a-encre) 28%,transparent)}
+.a-fiche p,.a-fiche ul{margin:0}
+.a-fiche ul{padding-left:1.1em}
+.a-image{margin:0;display:grid;gap:6px}
+.a-image img{max-width:100%;height:auto;display:block}
+.a-image .vide{border:1.5px dashed color-mix(in srgb,var(--a-encre) 45%,transparent);aspect-ratio:4/3;display:grid;place-items:center;padding:16px;text-align:center;font-family:var(--police-etiquette);font-size:12px;color:color-mix(in srgb,var(--a-encre) 70%,transparent)}
+.a-image figcaption{font-size:12px;color:color-mix(in srgb,var(--a-encre) 70%,transparent)}
+.a-gauche{display:contents}
+@media (min-width:900px){
+  .a-corps{grid-template-columns:5fr 6fr;column-gap:48px;align-items:start;padding-top:32px}
+  .a-gauche{display:grid;gap:26px;grid-column:1}
+  .a-geste{grid-column:2;grid-row:1 / span 2;position:sticky;top:76px}
+}
+
+/* ---------- Page de test ---------- */
+#test{max-width:560px;margin:0 auto;padding:24px var(--gouttiere) 48px;font-family:var(--police-etiquette);background:#f4f1ea;color:#111;min-height:100%}
+#test h1{font-family:"Jost",sans-serif;font-style:italic;font-weight:900;font-size:56px;line-height:.9;margin:0 0 8px;background:#e2001a;color:#fff;display:inline-block;padding:6px 14px 8px}
+#test p{font-size:14px}
+#test ul{list-style:none;padding:0;margin:20px 0;border-top:2px solid #111}
+#test li{display:flex;gap:12px;align-items:baseline;justify-content:space-between;padding:10px 0;border-bottom:1px solid #1113;font-size:13px}
+#test li b{white-space:nowrap}
+#test .ok{color:#0a7d3c}#test .ko{color:#b3261e}#test .att{color:#777}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
