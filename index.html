@@ -2,83 +2,46 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Clavier des graphistes</title>
-<link rel="stylesheet" href="css/systeme.css">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>À la lettre : 26 graphistes, 26 gestes à refaire</title>
+<meta name="description" content="Un abécédaire du graphisme. Une lettre, un graphiste, un geste à refaire.">
+<link rel="stylesheet" href="labo/commun.css">
+<link rel="stylesheet" href="site.css">
 </head>
-<body data-da="riso">
-<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="ciseaux" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency=".035" numOctaves="2" seed="7"/><feDisplacementMap in="SourceGraphic" scale="7"/></filter></svg>
+<body data-fond="clair" data-texture="toile" data-titre="haut" data-typo="affiche">
 
-<main id="accueil">
-  <header class="entete">
-    <h1 class="titre" id="titre">AZERTY</h1>
-    <p class="chapo">Un abécédaire de graphistes. Appuie sur une touche, entre dans l’atelier, refais le geste.</p>
-  </header>
-  <aside class="qr">
-    <p class="etiquette">Sur ton téléphone : scanne</p>
-    <svg role="img" aria-label="QR code du site" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 45 45" shape-rendering="crispEdges"><path fill="#ffffff" d="M0 0h45v45H0z"/><path stroke="#000000" d="M4 4.5h7m4 0h1m1 0h1m2 0h1m1 0h4m1 0h2m1 0h1m3 0h7M4 5.5h1m5 0h1m1 0h1m3 0h1m4 0h3m2 0h1m3 0h1m1 0h1m1 0h1m5 0h1M4 6.5h1m1 0h3m1 0h1m2 0h1m1 0h2m2 0h2m1 0h1m2 0h1m2 0h5m1 0h1m1 0h3m1 0h1M4 7.5h1m1 0h3m1 0h1m1 0h3m1 0h10m3 0h1m1 0h2m1 0h1m1 0h3m1 0h1M4 8.5h1m1 0h3m1 0h1m1 0h1m1 0h1m1 0h1m1 0h2m1 0h1m8 0h1m3 0h1m1 0h3m1 0h1M4 9.5h1m5 0h1m2 0h3m6 0h4m1 0h1m6 0h1m5 0h1M4 10.5h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7M12 11.5h1m1 0h6m2 0h3m1 0h1m1 0h2m1 0h2M5 12.5h1m1 0h4m1 0h1m1 0h2m2 0h3m1 0h4m2 0h2m2 0h3m1 0h2m1 0h1M4 13.5h2m2 0h1m4 0h1m2 0h1m3 0h1m1 0h3m2 0h3m4 0h1m1 0h1m1 0h1m1 0h1M10 14.5h2m1 0h1m2 0h1m1 0h3m2 0h2m1 0h4m3 0h4m3 0h1M6 15.5h2m3 0h2m2 0h3m3 0h3m3 0h1m2 0h2m1 0h2m2 0h3M6 16.5h3m1 0h1m1 0h3m1 0h3m3 0h1m1 0h1m1 0h2m4 0h1m1 0h1m2 0h1m2 0h1M4 17.5h3m1 0h2m2 0h5m1 0h1m1 0h2m3 0h3m1 0h2m1 0h2m1 0h2m1 0h1M4 18.5h3m1 0h1m1 0h2m2 0h1m1 0h1m1 0h2m1 0h4m5 0h2m2 0h2m1 0h4M5 19.5h5m2 0h3m1 0h1m1 0h2m1 0h1m2 0h3m1 0h1m1 0h1m2 0h2m2 0h2M5 20.5h1m2 0h5m1 0h1m4 0h2m1 0h1m1 0h6m1 0h1m2 0h1m3 0h1M7 21.5h1m1 0h1m2 0h2m1 0h2m1 0h3m1 0h1m3 0h2m3 0h1m3 0h1m2 0h2M4 22.5h1m3 0h1m1 0h1m2 0h1m6 0h4m1 0h1m2 0h1m2 0h3m4 0h1m1 0h1M4 23.5h1m1 0h1m1 0h2m2 0h4m1 0h2m3 0h1m1 0h1m2 0h1m1 0h2m1 0h3m2 0h1m1 0h2M5 24.5h2m1 0h7m3 0h1m1 0h2m2 0h1m2 0h1m1 0h6m1 0h2m2 0h1M4 25.5h3m1 0h2m1 0h1m4 0h1m1 0h2m1 0h3m2 0h2m1 0h4m1 0h5m1 0h1M10 26.5h1m4 0h3m1 0h1m2 0h3m2 0h1m1 0h1m1 0h1m4 0h2m2 0h1M4 27.5h3m1 0h2m2 0h1m4 0h6m1 0h1m2 0h3m1 0h3m1 0h1m1 0h2M7 28.5h2m1 0h5m2 0h1m1 0h2m1 0h1m2 0h1m1 0h1m1 0h1m5 0h2m2 0h2M4 29.5h1m3 0h2m2 0h1m2 0h1m2 0h4m1 0h3m1 0h1m1 0h2m3 0h1m1 0h3M4 30.5h5m1 0h1m2 0h4m1 0h2m3 0h4m4 0h1m2 0h2m1 0h1m1 0h2M4 31.5h1m6 0h1m1 0h1m1 0h2m1 0h3m5 0h3m3 0h2m3 0h2m1 0h1M4 32.5h1m1 0h3m1 0h1m1 0h4m2 0h1m2 0h3m3 0h3m1 0h7M12 33.5h2m2 0h1m2 0h1m1 0h1m9 0h2m3 0h4M4 34.5h7m5 0h2m1 0h3m2 0h7m1 0h1m1 0h1m1 0h5M4 35.5h1m5 0h1m1 0h1m1 0h1m2 0h2m1 0h2m1 0h1m2 0h1m2 0h1m1 0h2m3 0h2m1 0h2M4 36.5h1m1 0h3m1 0h1m1 0h1m1 0h1m2 0h1m2 0h2m3 0h3m2 0h7m2 0h2M4 37.5h1m1 0h3m1 0h1m1 0h6m1 0h2m1 0h1m2 0h1m2 0h1m1 0h1m1 0h1m1 0h2m3 0h1M4 38.5h1m1 0h3m1 0h1m2 0h1m1 0h1m3 0h1m3 0h3m1 0h1m8 0h1m2 0h2M4 39.5h1m5 0h1m1 0h1m4 0h2m3 0h3m1 0h3m2 0h1m1 0h3m2 0h3M4 40.5h7m4 0h2m3 0h1m3 0h1m2 0h2m3 0h2m2 0h2m2 0h1"/></svg>
-  </aside>
-  <div class="pousse"></div>
-  <ol class="index" id="index" aria-label="Index des graphistes"></ol>
-  <div class="clavier" id="clavier" role="group" aria-label="Clavier : une touche par graphiste"></div>
-  <footer class="pied">
-    <p class="etiquette astuce">
-      <span class="doigt">Touche une lettre</span>
-      <span class="souris"><span class="focus">Clique dans la page, puis </span>tape une lettre · Échap pour revenir</span>
-      · <span id="compteur"></span>
-    </p>
-    <div class="choix-da" role="group" aria-label="Direction artistique (essai)">
-      <button type="button" data-da-choix="riso" aria-pressed="true">1 Riso</button>
-      <button type="button" data-da-choix="valentine" aria-pressed="false">2 Machine</button>
-      <button type="button" data-da-choix="specimen" aria-pressed="false">3 Spécimen</button>
-    </div>
-  </footer>
+<div class="mur" aria-hidden="true">
+  <div class="mur-nom" id="murNom"></div>
+  <div class="mur-lettre" id="murLettre"></div>
+  <div class="b-mur"></div><div class="b-planche"></div><div class="b-chant"></div>
+</div>
+
+<header class="tete">
+  <h1 id="titre"></h1>
+  <p id="sous">26 graphistes, 26 gestes à refaire.<br>Tape une lettre, puis Entrée.</p>
+</header>
+
+<main class="scene" id="scene" aria-label="L’étagère : vingt-six livres, un par lettre">
+  <div class="rayon" id="rayon"></div>
 </main>
 
-<article id="atelier" hidden>
-  <nav class="a-barre" aria-label="Navigation">
-    <button type="button" class="bouton" id="retour">← Clavier</button>
-    <p class="etiquette" id="a-position"></p>
-    <div class="groupe">
-      <button type="button" class="bouton" id="precedent" aria-label="Atelier précédent">‹</button>
-      <button type="button" class="bouton" id="suivant" aria-label="Atelier suivant">›</button>
-    </div>
-  </nav>
-  <div class="a-corps">
-    <div class="a-gauche">
-      <header class="a-tete">
-        <div class="a-lettre" id="a-lettre"></div>
-        <div>
-          <p class="etiquette" id="a-statut"></p>
-          <h2 class="a-nom" id="a-nom" tabindex="-1"></h2>
-          <p class="a-dates" id="a-dates"></p>
-        </div>
-      </header>
-    </div>
-    <section class="a-geste" aria-labelledby="a-geste-titre">
-      <p class="etiquette">Refais le geste</p>
-      <h3 id="a-geste-titre"></h3>
-      <p class="consigne" id="a-consigne"></p>
-      <div class="a-zone" id="a-zone"></div>
-    </section>
-    <div class="a-gauche">
-      <div class="a-fiche" id="a-fiche"></div>
-      <figure class="a-image" id="a-image"></figure>
-    </div>
-  </div>
-</article>
-
-<section id="test" hidden>
-  <h1>TEST</h1>
-  <p>Chaque ligne vérifie une brique dont le site a besoin.</p>
-  <ul id="liste"></ul>
-  <p><label for="photo">Photo ou selfie (remplace la webcam si elle est refusée) :</label><br>
-  <input id="photo" type="file" accept="image/*"></p>
-  <p><a href="#">← Retour au clavier</a></p>
+<section class="legende" id="legende" aria-live="polite">
+  <h2 id="nom"></h2>
+  <p class="meta" id="meta"></p>
+  <p class="geste" id="geste"></p>
+  <button type="button" class="ouvrir" id="ouvrir">Ouvrir le livre</button>
 </section>
 
-<div id="flot" aria-hidden="true"></div>
-<div id="annonce" role="status" aria-live="polite"></div>
-<script type="module" src="js/app.js"></script>
+<button class="pas g" type="button" aria-label="Lettre précédente"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4 7 12l8 8"/></svg></button>
+<button class="pas d" type="button" aria-label="Lettre suivante"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 4 8 8-8 8"/></svg></button>
+
+<nav class="alpha" id="alpha" aria-label="Alphabet"></nav>
+
+<div id="page" hidden></div>
+<div id="visionneuse" hidden></div>
+<aside class="reglages plie" id="reglages" hidden></aside>
+<p class="sr" id="annonce" aria-live="polite"></p>
+
+<script type="module" src="site.js"></script>
 </body>
 </html>
