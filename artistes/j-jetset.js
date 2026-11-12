@@ -1,13 +1,13 @@
 // J · Experimental Jetset — Full Scale False Scale. A reader of sorts (Roma Publications, 2019).
 // Reproduit d'après la couverture (img/j/ref.jpg, fournie par Eliott) : fond jaune, en-tête en petites lignes,
 // puis quatre grandes lignes où les mots sont posés les uns sur les autres, chacun sur toute la largeur : les lettres se fondent.
-// Ligne 1 à l'endroit, ligne 2 retournée, ligne 3 en miroir, ligne 4 renversée, comme sur l'original.
+// Lignes 2 et 4 en miroir (retournées de gauche à droite, jamais à l’envers), comme sur l’original.
 // On écrit soi-même : plus un mot est long, plus ses lettres se serrent ; Espace pose un nouveau mot par-dessus. Le clavier est réservé à l'atelier (clavier: true).
 
 const DEPART = 'Full Scale False Scale';
 const JAUNE = '#fff200', NOIR = '#1a1a1a';
 const POLICE = '"Helvetica Neue", Helvetica, Arial, Archivo, sans-serif'; // Helvetica sur Mac ; Arial puis Archivo ailleurs
-const RETOURS = [[1, 1], [-1, -1], [-1, 1], [1, -1]]; // endroit, demi-tour, miroir, renversé
+const RETOURS = [[1, 1], [-1, 1], [1, 1], [-1, 1]]; // endroit, miroir, endroit, miroir (jamais à l’envers)
 
 export default {
   lettre: 'J',

@@ -166,7 +166,6 @@ addEventListener('wheel', e => {
 document.querySelector('.pas.g').addEventListener('click', () => aller(-1));
 document.querySelector('.pas.d').addEventListener('click', () => aller(1));
 $('#alpha').addEventListener('click', e => { const b = e.target.closest('button'); if (b) versLettre(b.dataset.l); });
-$('#ouvrir').addEventListener('click', () => ouvrir());
 
 /* ───────── La page ouverte ───────── */
 const CHEVRON = d => `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${d < 0 ? 'M15 4 7 12l8 8' : 'm9 4 8 8-8 8'}"/></svg>`;
