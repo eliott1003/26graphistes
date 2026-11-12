@@ -5,7 +5,7 @@ body{
   --h:min(48vh,33vw);            /* hauteur d'un livre */
   --ws:calc(var(--h)*.13);       /* épaisseur du dos */
   --d:calc(var(--h)*.68);        /* largeur de la couverture */
-  --pd:calc(var(--h)*.96);       /* profondeur de la planche */
+  --pd:calc(var(--h)*1.1);       /* profondeur de la planche */
   --ep:calc(var(--h)*.046);      /* épaisseur de la planche */
   --sol:64vh;                    /* hauteur du plan où posent les livres */
   --mur:#e6e5e1; --encre:#141414; --planche:#f4f3ef; --chant:#fbfaf7; --doux:rgba(20,20,20,.62);
@@ -47,7 +47,7 @@ body[data-fond="affiche"][data-titre="mur"] .tete{justify-content:space-between}
 body[data-fond="affiche"] .tete p{position:static}
 
 /* ───────── L'étagère en 3D ───────── */
-.scene{position:fixed;inset:0;perspective:1900px;perspective-origin:50% 40%;overflow:hidden;touch-action:pan-y;z-index:1}
+.scene{position:fixed;inset:0;perspective:1900px;perspective-origin:50% 35%;overflow:hidden;touch-action:pan-y;z-index:1}
 .rayon{position:absolute;left:50%;top:var(--sol);width:0;height:0;transform-style:preserve-3d}
 .livre,.pose,.tourne{position:absolute;left:0;top:0;width:0;height:0;transform-style:preserve-3d}
 .livre{transition:transform .78s cubic-bezier(.3,.85,.3,1);cursor:pointer}
@@ -79,15 +79,16 @@ body[data-fond="affiche"] .tete p{position:static}
   background:repeating-linear-gradient(90deg,#f1ecdf 0 1.5px,#d8d0be 1.5px 2.6px);border:solid var(--c);border-width:0 calc(var(--ws)*.07)}
 .gout{left:calc(var(--ws)/-2);top:calc(var(--h)*-1);width:var(--ws);height:var(--h);transform:rotateY(180deg) translateZ(calc(var(--d)/2 - var(--ws)*.06));
   background:repeating-linear-gradient(90deg,#efe9dc 0 1.5px,#d2cab8 1.5px 2.6px);border:solid var(--c);border-width:0 calc(var(--ws)*.07)}
+.livre:not(.actif) .dos::after{background:linear-gradient(90deg,#000,rgba(0,0,0,.35));opacity:var(--od,0)}
 .livre.actif .couv{--o:0}
 .livre.actif .dos{--o:.34}
 
 /* ombres : chaque livre pose la sienne sur la planche ; le livre sorti en porte une sur le mur */
 .ombre{position:absolute;left:calc(var(--ws)/-2);top:calc(var(--d)/-2);width:var(--ws);height:var(--d);border-radius:3px;
   transform:translateY(1px) rotateX(90deg);background:rgba(0,0,0,.5);
-  box-shadow:0 0 calc(var(--h)*.022) calc(var(--h)*.012) rgba(0,0,0,.5),calc(var(--h)*.03) calc(var(--h)*-.02) calc(var(--h)*.07) calc(var(--h)*.012) rgba(0,0,0,.2);
+  box-shadow:0 0 calc(var(--h)*.02) calc(var(--h)*.01) rgba(0,0,0,.5),calc(var(--h)*.022) calc(var(--h)*.05) calc(var(--h)*.06) 0 rgba(0,0,0,.38);
   opacity:var(--f-ombre,.8);transition:transform .78s cubic-bezier(.3,.85,.3,1)}
-.livre.actif .ombre{transform:translateY(1px) rotateX(90deg) rotateZ(90deg)}
+.livre.actif .ombre{transform:translateY(1px) rotateX(90deg) rotateZ(90deg);box-shadow:0 0 calc(var(--h)*.02) calc(var(--h)*.01) rgba(0,0,0,.5),calc(var(--h)*.06) calc(var(--h)*-.03) calc(var(--h)*.07) 0 rgba(0,0,0,.42)}
 .ombre-mur{position:absolute;left:calc(var(--d)*-.5);top:calc(var(--h)*-1);width:var(--d);height:var(--h);
   transform:translateZ(calc(var(--pd)/-2 + 2px)) translate(calc(var(--h)*.07),calc(var(--h)*.02));background:rgba(0,0,0,.3);filter:blur(calc(var(--h)*.06));opacity:var(--f-ombre,.8)}
 .b-mur,.b-planche,.b-chant{position:absolute;left:0;right:0}

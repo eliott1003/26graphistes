@@ -81,6 +81,7 @@ function ranger() {
     b.classList.toggle('actif', o);
     b.style.transform = `translate3d(${r * pasx + Math.sign(r) * ((d - ws) / 2 + ecart * 1.7)}px,0,${o ? d / 2 + ws * .25 : 0}px)`;
     b.style.zIndex = 100 - Math.abs(r);
+    b.style.setProperty('--od', r === 1 ? .34 : r === 2 ? .16 : r === 3 ? .06 : 0);
     if (!o) { const p = b.querySelector('.pose'); p.style.transform = ''; p.style.transition = ''; }
   });
   const a = courant(), mur = R.fond === 'affiche' ? a.fond : (MURS[R.fond] || MURS.clair);
@@ -95,7 +96,7 @@ function ranger() {
 const PERSPECTIVE = 1900, mesure = document.createElement('canvas').getContext('2d');
 /* La planche et son chant sont dessinés à plat, derrière les livres : on calcule où ils tombent à l'écran. */
 function caler(H) {
-  const oy = innerHeight * .4, sol = parseFloat(getComputedStyle(rayon).top), pd = H * .96;
+  const oy = innerHeight * .35, sol = parseFloat(getComputedStyle(rayon).top), pd = H * 1.1;
   const y = z => oy + (sol - oy) * PERSPECTIVE / (PERSPECTIVE - z);
   corps.style.setProperty('--y-fond', y(-pd / 2).toFixed(1) + 'px'); corps.style.setProperty('--y-bord', y(pd / 2).toFixed(1) + 'px');
   corps.style.setProperty('--y-ep', (H * .046 * PERSPECTIVE / (PERSPECTIVE - pd / 2)).toFixed(1) + 'px');
