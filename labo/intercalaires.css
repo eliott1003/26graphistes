@@ -140,3 +140,14 @@ body[data-peau="aplat"] .feuille{padding-left:0;padding-right:0}
 /* Peau « aplats » : pas de feuille, le texte se pose sur la couleur du dossier. */
 body[data-peau="aplat"] .feuille{background:transparent;color:inherit;--a-accent:var(--ee)}
 body[data-peau="aplat"] .feuille .bouton.plein{color:var(--cc)}
+
+/* Dossier ouvert : pleine page (demande d'Eliott, 12/11). Le dossier garde son onglet, le corps prend toute la largeur. */
+.p-rang{width:auto;margin:0 clamp(12px,2vw,28px)}
+.p-corps{width:100%;margin:0;border-radius:0;padding:0 0 60px}
+#page .feuille{max-width:none;margin:0;min-height:100%;padding:clamp(18px,2.6vw,40px) clamp(16px,3vw,56px)}
+#page .f-tete{grid-template-columns:clamp(90px,9vw,140px) 1fr;align-items:center}
+#page .f-tete h2{font-size:clamp(40px,5.4vw,88px)}
+#page .f-qui{max-width:72ch}
+#page .f-zone{min-height:min(68vh,760px)}
+#page .f-cadres{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+#page .f-cadres .cadre{aspect-ratio:4/3}

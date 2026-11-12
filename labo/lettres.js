@@ -11,9 +11,9 @@ const t = (ch, police, taille, x, y, extra = '') =>
 const ARCHIVO = "Archivo,Helvetica,Arial,sans-serif";
 
 const DESSINS = {
-  // Apeloig : la lettre au pochoir, coupée en tranches qui glissent (la typo en mouvement)
-  A: (a, u) => [[0, 34, -5], [34, 22, 4], [56, 44, -2]].map(([y, h, dx], i) =>
-    `<clipPath id="${u}c${i}"><rect x="0" y="${y}" width="100" height="${h}"/></clipPath><g clip-path="url(#${u}c${i})"><g transform="translate(${dx} 0)">${t('A', "'Saira Stencil',sans-serif", 104, 50, 88, `fill="${a.encre}"`)}</g></g>`).join(''),
+  // Frutiger : jaune signalétique sur bleu nuit, avec la flèche
+  A: (a) => t('A', "'Source Sans',Frutiger,sans-serif", 96, 38, 86, `font-weight="700" fill="${a.encre}"`) +
+    `<path d="M62 46 L86 22 M68 22 H86 V40" fill="none" stroke="${a.encre}" stroke-width="7.5" stroke-linecap="square"/>`,
   // Bass : papier noir découpé aux ciseaux, la lettre en réserve
   B: (a) => `<polygon points="9,13 88,5 95,86 15,96" fill="#111"/><g transform="rotate(-5 50 50)">${t('B', "Londrina,Impact,sans-serif", 92, 51, 83, `fill="${a.fond}"`)}</g>`,
   // Cassandre : moitié pleine, moitié hachurée, comme le Bifur
@@ -22,28 +22,26 @@ const DESSINS = {
   // Carson : deux lettres qui se chevauchent, l'une coupée par le bord
   D: (a) => `<g transform="rotate(11 50 50)">${t('D', "Bodoni,Didot,serif", 128, 60, 96, `font-weight="900" fill="${a.accent}"`)}</g>` +
     t('D', "'Special Elite',Courier,monospace", 92, 34, 78, `fill="${a.encre}"`) + `<rect x="-4" y="54" width="108" height="2.2" fill="${a.encre}" transform="rotate(-7 50 55)"/>`,
-  // Experimental Jetset : une grotesque noire, trop grande pour son cadre
-  E: (a) => t('E', ARCHIVO, 150, 52, 112, `font-weight="800" fill="${a.encre}"`),
-  // Frutiger : jaune sur fond sombre, avec la flèche de la signalétique
-  F: (a) => t('F', "'Source Sans',Frutiger,sans-serif", 96, 36, 84, `font-weight="700" fill="${a.encre}"`) +
-    `<path d="M60 46 L84 22 M66 22 H84 V40" fill="none" stroke="${a.encre}" stroke-width="7.5" stroke-linecap="square"/>`,
+  // Kauffer : la lettre et des oiseaux taillés comme des éclats (vorticisme)
+  E: (a) => t('E', ARCHIVO, 104, 40, 88, `font-weight="800" fill="${a.encre}"`) +
+    [[72, 22, -18], [84, 40, -8], [66, 52, -24], [86, 64, -12]].map(([x, y, r]) => `<g transform="translate(${x} ${y}) rotate(${r})"><path d="M-11 2 L0 -5 L4 -1 L13 -6 L6 3 L-2 1 Z" fill="${a.accent}"/></g>`).join(''),
+  // Favre : pleins et vides, une lettre en aplats
+  F: (a) => `<circle cx="66" cy="66" r="30" fill="${a.encre}"/>` + t('F', "Bodoni,Didot,serif", 108, 44, 88, `font-weight="900" fill="${a.accent}"`),
   // Grignani : la lettre n'existe que parce que les rayures changent de sens
   G: (a, u) => `<pattern id="${u}v" width="5" height="5" patternUnits="userSpaceOnUse"><rect width="2.5" height="5" fill="#fff"/></pattern><pattern id="${u}o" width="5" height="5" patternUnits="userSpaceOnUse"><rect width="5" height="2.5" fill="#fff"/></pattern>` +
     `<rect width="100" height="100" fill="url(#${u}v)"/>` + t('G', ARCHIVO, 112, 50, 90, `font-weight="800" fill="#0c0c0c"`) + t('G', ARCHIVO, 112, 50, 90, `font-weight="800" fill="url(#${u}o)"`),
-  // Hillmann : l'image dans l'image
-  H: (a, u) => { const un = t('H', ARCHIVO, 104, 50, 87, 'font-weight="800"');
-    return `<g fill="#111">${un}</g><g transform="translate(50 50) scale(.36) translate(-50 -50)"><rect width="100" height="100" fill="#f4f4f1"/><g fill="#111">${un}</g><g transform="translate(50 50) scale(.36) translate(-50 -50)"><rect width="100" height="100" fill="#111"/><g fill="#f4f4f1">${un}</g></g></g>`; },
+  // Bayer : pas de majuscule, et les trois formes du Bauhaus
+  H: (a) => t('h', "Jost,Futura,sans-serif", 104, 50, 80, `font-weight="500" fill="${a.encre}"`) + `<circle cx="16" cy="84" r="7.5" fill="${a.accent}"/><rect x="77" y="76.5" width="15" height="15" fill="#1f4fa3"/><path d="M80 8 L92 26 H68 Z" fill="#f2c12e"/>`,
   // Girard : un soleil pour point sur le i
   I: (a) => Array.from({ length: 14 }, (_, i) => `<rect x="48.4" y="4" width="3.2" height="11" fill="${a.accent}" transform="rotate(${i * 360 / 14} 50 27)"/>`).join('') +
     `<circle cx="50" cy="27" r="10.5" fill="${a.accent}"/>` + t('I', "'Alfa Slab',Rockwell,serif", 58, 50, 93, `fill="${a.encre}"`),
-  // Carlu : la lettre coupée en deux tons, géométrie Art déco
-  J: (a, u) => `<clipPath id="${u}g"><rect x="0" y="0" width="52" height="100"/></clipPath><clipPath id="${u}d"><rect x="52" y="0" width="48" height="100"/></clipPath>` +
-    `<g clip-path="url(#${u}g)">${t('J', "Jost,Futura,sans-serif", 104, 52, 80, `font-weight="700" fill="${a.accent}"`)}</g><g clip-path="url(#${u}d)">${t('J', "Jost,Futura,sans-serif", 104, 52, 80, `font-weight="700" fill="${a.encre}"`)}</g>`,
+  // Experimental Jetset : une grotesque noire, trop grande pour son cadre
+  J: (a) => t('J', ARCHIVO, 150, 46, 108, `font-weight="800" fill="${a.encre}"`) + `<rect x="0" y="92" width="100" height="8" fill="${a.accent}"/>`,
   // Kruger : blanc oblique sur bandeau rouge, photo tramée derrière
   K: (a, u) => `<pattern id="${u}t" width="4" height="4" patternUnits="userSpaceOnUse"><rect width="4" height="4" fill="#1b1b1b"/><circle cx="2" cy="2" r="1.1" fill="#8c8c8c"/></pattern><rect width="100" height="100" fill="url(#${u}t)"/><rect y="17" width="100" height="66" fill="${a.fond}"/>` +
     t('K', "Jost,Futura,sans-serif", 84, 49, 80, 'font-style="italic" font-weight="900" fill="#fff"'),
-  // Lissitzky : la lettre rouge entre dans le cercle noir
-  L: (a) => `<circle cx="67" cy="60" r="29" fill="${a.accent}"/><g transform="rotate(-13 40 60)">${t('L', "Anton,Impact,sans-serif", 104, 42, 92, `fill="${a.encre}"`)}</g>`,
+  // Leupin : la lettre pend à son fil, comme la pancarte
+  L: (a) => `<path d="M50 0 V24" stroke="${a.encre}" stroke-width="1.6"/><circle cx="50" cy="24" r="2.4" fill="${a.encre}"/><g transform="rotate(-8 50 24)"><rect x="22" y="26" width="56" height="64" rx="5" fill="${a.accent}"/>` + t('L', "Londrina,Impact,sans-serif", 70, 50, 82, `fill="${a.fond}"`) + `</g>`,
   // Bierut : la lettre en seize carreaux, trois ont changé de place
   M: (a, u) => { const src = [0, 1, 2, 3, 4, 5, 6, 11, 8, 9, 10, 15, 12, 13, 14, 7], c = 22, g = 1.8, o = 3.3; let s = `<defs><g id="${u}m">${t('M', "'Alfa Slab',Rockwell,serif", 84, 50, 80)}</g></defs>`;
     for (let i = 0; i < 16; i++) { const dx = o + (i % 4) * (c + g), dy = o + Math.floor(i / 4) * (c + g), sx = o + (src[i] % 4) * (c + g), sy = o + Math.floor(src[i] / 4) * (c + g);
@@ -69,12 +67,13 @@ const DESSINS = {
   // Vignelli : deux lignes de métro et leurs stations
   V: (a) => `<g fill="none" stroke-linejoin="round" stroke-linecap="round"><path d="M14 16 L46 84 L78 16" stroke="${a.encre}" stroke-width="10"/><path d="M27 16 L57 80 L90 16" stroke="${a.accent}" stroke-width="10"/></g>` +
     [[14, 16], [78, 16], [46, 84], [30, 50]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="4.2" fill="${a.fond}" stroke="${a.encre}" stroke-width="2.2"/>`).join(''),
-  // Crouwel : un w sans courbe ni diagonale, posé sur sa grille
-  W: (a) => `<g stroke="#fff" stroke-width=".6">${[14, 26, 38, 50, 62, 74, 86].map(v => `<path d="M${v} 0 V100 M0 ${v} H100"/>`).join('')}</g><path d="M14 26 V68 L20 74 H44 L50 68 V26 M50 68 L56 74 H80 L86 68 V26" fill="none" stroke="${a.encre}" stroke-width="10.5" stroke-linejoin="miter"/>`,
+  // Cieślewicz : la lettre en trame grossie, avec un seul œil
+  W: (a, u) => `<pattern id="${u}t" width="5" height="5" patternUnits="userSpaceOnUse"><circle cx="2.5" cy="2.5" r="1.7" fill="${a.encre}"/></pattern>` +
+    t('W', ARCHIVO, 104, 50, 88, `font-weight="800" fill="url(#${u}t)"`) + `<ellipse cx="50" cy="44" rx="15" ry="9" fill="#fff" stroke="${a.encre}" stroke-width="2.5"/><circle cx="50" cy="44" r="5.5" fill="${a.accent}"/><circle cx="50" cy="44" r="2.2" fill="${a.encre}"/>`,
   // Excoffon : la lettre au pinceau
   X: (a) => `<g transform="rotate(-6 50 50)">${t('X', "Knewave,cursive", 104, 50, 86, `fill="${a.encre}"`)}</g>`,
-  // Bayer : pas de majuscule, et les trois formes du Bauhaus
-  Y: (a) => t('y', "Jost,Futura,sans-serif", 118, 50, 66, `font-weight="500" fill="${a.encre}"`) + `<circle cx="16" cy="84" r="7.5" fill="${a.accent}"/><rect x="77" y="76.5" width="15" height="15" fill="#1f4fa3"/><path d="M80 8 L92 26 H68 Z" fill="#f2c12e"/>`,
+  // Lissitzky : le coin rouge entre dans le cercle
+  Y: (a) => `<circle cx="64" cy="60" r="28" fill="${a.accent}"/><path d="M4 94 L58 50 L46 78 Z" fill="${a.encre}"/>` + t('Y', "Anton,Impact,sans-serif", 54, 24, 58, `fill="${a.encre}"`),
   // Rappaz : la lettre en trois pièces à remettre en place
   Z: (a, u) => [[0, 39, 'translate(-5 -3) rotate(-4 50 20)'], [39, 24, 'translate(4 0)'], [63, 40, 'translate(-3 4) rotate(4 50 80)']].map(([y, h, tr], i) =>
     `<clipPath id="${u}p${i}"><rect x="-10" y="${y}" width="120" height="${h}"/></clipPath><g transform="${tr}"><g clip-path="url(#${u}p${i})">${t('Z', ARCHIVO, 114, 50, 91, `font-weight="800" fill="${a.encre}"`)}</g></g>`).join(''),
@@ -91,12 +90,11 @@ export function carte(l, { titre = false } = {}) {
 
 /* La lettre seule pour un onglet : même caractère que la carte, sans le décor. */
 const GLYPHES = {
-  A: "'Saira Stencil'", B: "Londrina;900", C: "Limelight", D: "'Special Elite'", E: "Archivo;800", F: "'Source Sans';700", G: "Archivo;800",
-  H: "Archivo;800", I: "'Alfa Slab'", J: "Jost;700", K: "Jost;900;italic", L: "Anton", M: "'Alfa Slab'", N: "Jost;700", O: "Archivo;400", P: "Archivo;800",
-  Q: "Archivo;600", R: "'Alfa Slab'", S: "Anton", T: "Caslon;700", U: "'Sofia Cond';900", V: "Archivo;800", X: "Knewave", Y: "Jost;500", Z: "Archivo;800",
+  A: "'Source Sans';700", B: "Londrina;900", C: "Limelight", D: "'Special Elite'", E: "Archivo;800", F: "Bodoni;900", G: "Archivo;800",
+  H: "Jost;500", I: "'Alfa Slab'", J: "Archivo;800", K: "Jost;900;italic", L: "Londrina;900", M: "'Alfa Slab'", N: "Jost;700", O: "Archivo;400", P: "Archivo;800",
+  Q: "Archivo;600", R: "'Alfa Slab'", S: "Anton", T: "Caslon;700", U: "'Sofia Cond';900", V: "Archivo;800", W: "Archivo;800", X: "Knewave", Y: "Anton", Z: "Archivo;800",
 };
 export function glyphe(l) {
-  if (l === 'W') return `<span class="gl"><svg viewBox="8 18 84 62" aria-hidden="true"><path d="M14 26 V68 L20 74 H44 L50 68 V26 M50 68 L56 74 H80 L86 68 V26" fill="none" stroke="currentColor" stroke-width="11"/></svg></span>`;
   const [police, graisse = 400, style = 'normal'] = (GLYPHES[l] || 'Archivo;800').split(';');
-  return `<span class="gl" style="font-family:${police},sans-serif;font-weight:${graisse};font-style:${style}">${l === 'Y' ? 'y' : l}</span>`;
+  return `<span class="gl" style="font-family:${police},sans-serif;font-weight:${graisse};font-style:${style}">${l === 'H' ? 'h' : l}</span>`;
 }

@@ -67,7 +67,7 @@ function construire() {
         <span class="i-ouvrir">Entrée, ou la même lettre, pour ouvrir le dossier.</span>
       </div></div>
     </div>`).join('') +
-    `<p class="pied">26 graphistes rangés par lettre, de Philippe Apeloig à Rolf Rappaz. Dans chaque dossier, un geste à refaire : à la souris, au clavier ou devant la caméra.</p>`;
+    `<p class="pied">26 graphistes rangés par lettre, d’Adrian Frutiger à Rolf Rappaz. Dans chaque dossier, un geste à refaire : à la souris, au clavier ou devant la caméra.</p>`;
   classeur.querySelectorAll('.dossier').forEach(d => D.set(d.dataset.l, d));
   disposer();
 }
