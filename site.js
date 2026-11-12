@@ -5,7 +5,7 @@
 import { ARTISTES, PAR_LETTRE } from './labo/donnees.js';
 import { carte, glyphe } from './labo/lettres.js';
 
-const DEFAUT = { fond: 'clair', titre: 'haut', typo: 'affiche', texture: 'toile', texte: 'À la lettre', incline: '1' };
+const DEFAUT = { fond: 'affiche', titre: 'haut', typo: 'affiche', texture: 'toile', texte: 'À la lettre', incline: '1' };
 
 const TITRES = ['À la lettre', 'Emprunts', '741.6', 'Rayon graphisme', 'Prière de toucher', 'De A à Z'];
 const FONDS = { clair: 'Mur clair', affiche: 'Affiche : couleur et nom de l’artiste', nuit: 'Nuit, livre éclairé', grille: 'Grille de mise en page', lettre: 'Lettre géante de l’artiste' };
@@ -47,15 +47,21 @@ function lum(hex) {
 const contraste = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + .05) / (y + .05); };
 const teinte = (a, mur) => [a.fond, a.accent, a.encre].find(c => contraste(c, mur) >= 1.7) || a.encre;
 
-/* La lettre de classement, marquée partout où elle apparaît dans le nom (le x d'Excoffon, les deux u de Ruedi Baur). */
-const nomMarque = a => [...a.nom].map(ch => ch.normalize('NFD')[0].toUpperCase() === a.l ? `<span class="cl">${esc(ch)}</span>` : esc(ch)).join('');
+/* La lettre de classement n'est marquée que si elle n'est l'initiale ni du prénom ni du nom (le i de Girard, le x d'Excoffon). */
+const norm = t => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+const estInitiale = a => norm(a.nom).split(/[\s.\-]+/).some(m => m[0] === a.l);
+const marquer = (t, a) => estInitiale(a) ? esc(t) : [...t].map(ch => norm(ch)[0] === a.l ? `<span class="cl">${esc(ch)}</span>` : esc(ch)).join('');
+const nomMarque = a => marquer(a.nom, a);
+/* Sur le livre : le nom court, sauf s'il ne contient pas la lettre (D pour Carson → « David Carson »). */
+const nomLivre = a => norm(a.court).includes(a.l) ? a.court : a.nom;
+const estLong = a => nomLivre(a) !== a.court;
 
 /* ───────── L'étagère ───────── */
 const livreHTML = (a, i) => `<div class="livre" style="--c:${a.fond};--e:${a.encre}">
   <div class="ombre"></div>
   <div class="pose"><div class="tourne">
-    <div class="f dos"><span class="lt">${glyphe(a.l)}</span><span class="filet"></span><span class="nm">${esc(a.court)}</span><span class="no">${String(i + 1).padStart(2, '0')}</span></div>
-    <div class="f couv">${carte(a.l)}<div class="nomcouv">${esc(a.court)}</div><div class="coll">${esc(cap(a.courant))}</div></div>
+    <div class="f dos"><span class="lt">${glyphe(a.l)}</span><span class="filet"></span><span class="nm${estLong(a) ? ' long' : ''}">${esc(nomLivre(a))}</span><span class="no">${String(i + 1).padStart(2, '0')}</span></div>
+    <div class="f couv">${carte(a.l)}<div class="nomcouv${estLong(a) ? ' long' : ''}">${marquer(nomLivre(a), a)}</div><div class="coll">${esc(cap(a.courant))}</div></div>
     <div class="f plat"></div><div class="f cime"></div><div class="f gout"></div>
   </div></div></div>`;
 rayon.setAttribute('aria-hidden', 'true');
@@ -89,7 +95,7 @@ function ranger() {
   $('#meta').innerHTML = `<span>${esc(a.dates)}</span><span>${esc(a.pays)}</span><span>${esc(cap(a.courant))}</span>`;
   $('#geste').textContent = a.geste;
   corps.style.setProperty('--a-fond', a.fond); corps.style.setProperty('--a-encre', a.encre); corps.style.setProperty('--a-teinte', teinte(a, mur));
-  $('#murNom').textContent = a.court; $('#murLettre').innerHTML = glyphe(a.l); ajusterNom();
+  $('#murNom').textContent = nomLivre(a); $('#murLettre').innerHTML = glyphe(a.l); ajusterNom();
   document.querySelectorAll('#alpha button').forEach(b => b.dataset.l === a.l ? b.setAttribute('aria-current', 'true') : b.removeAttribute('aria-current'));
   pencher();
 }
@@ -130,7 +136,7 @@ function tic() {
   const cx = actif ? mx : 0, cy = actif ? my : 0;
   px += (cx - px) * .12; py += (cy - py) * .12;
   p.style.transition = 'none';
-  p.style.transform = `rotateX(${(-py * 4.5).toFixed(2)}deg) rotateY(${(px * 11).toFixed(2)}deg)`;
+  p.style.transform = `rotateX(${(-py * 7).toFixed(2)}deg) rotateY(${(px * 17).toFixed(2)}deg)`;
   b.querySelector('.couv').style.setProperty('--reflet', (42 + px * 30).toFixed(1) + '%');
   if (Math.abs(cx - px) + Math.abs(cy - py) > .003) rafP = requestAnimationFrame(tic);
 }
@@ -243,7 +249,7 @@ function rectCouverture() {
 function poserVolet(a, r) {
   const el = document.createElement('div'); el.className = 'volet';
   el.style.cssText = `left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;--c:${a.fond};--e:${a.encre};--d:${r.width}px`;
-  el.innerHTML = `<div class="volet-in"><div class="volet-r">${carte(a.l)}<div class="nomcouv">${esc(a.court)}</div><div class="coll">${esc(cap(a.courant))}</div></div><div class="volet-v"></div></div>`;
+  el.innerHTML = `<div class="volet-in"><div class="volet-r">${carte(a.l)}<div class="nomcouv${estLong(a) ? ' long' : ''}">${marquer(nomLivre(a), a)}</div><div class="coll">${esc(cap(a.courant))}</div></div><div class="volet-v"></div></div>`;
   document.body.append(el); return el;
 }
 const decoupe = r => `inset(${r.top}px ${innerWidth - r.right}px ${innerHeight - r.bottom}px ${r.left}px)`;
