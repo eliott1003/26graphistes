@@ -110,7 +110,7 @@ export const ARTISTES = [
 ];
 
 export const PAR_LETTRE = new Map(ARTISTES.map(a => [a.l, a]));
-export const CONSTRUITS = new Set(['K']); // ateliers qui marchent vraiment aujourd'hui
+export const CONSTRUITS = new Set(ARTISTES.filter(a => a.module).map(a => a.l)); // ateliers qui marchent vraiment
 
 /* Clavier commun : lettres, flèches, Entrée, Échap. Ignore la frappe dans un champ. */
 export function ecouterClavier({ lettre, fleche, entree, echap }) {

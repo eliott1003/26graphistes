@@ -234,7 +234,7 @@ page.addEventListener('click', e => {
 ecouterClavier({
   lettre(l) {
     if (!D.has(l)) { annoncer(`${l} : pas de dossier.`); return; }
-    if (ouvert) { if (l !== ouvert) ouvrir(l); return; }
+    if (ouvert) { if (l !== ouvert && !demonter?.clavier) ouvrir(l); return; }
     if (choisi === l && origine !== 'souris') ouvrir(l); else { origine = null; apercu(l, 'clavier'); if (choisi === l) origine = 'clavier'; }
   },
   fleche(pas) {

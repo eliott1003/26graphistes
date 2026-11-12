@@ -33,10 +33,11 @@ export function gabarit(a) {
 }
 
 export async function monterGeste(racine, a) {
-  const zone = racine.querySelector('.f-zone'); let demonter = null, style = null;
+  const zone = racine.querySelector('.f-zone'); let demonter = null, style = null, clavier = false;
   if (a.module) {
     try {
       const m = (await import(a.module)).default;
+      clavier = !!m.clavier; // l'atelier se joue au clavier : le socle ne change plus de dossier avec les lettres
       if (m.css) { style = document.createElement('style'); style.textContent = m.css; document.head.append(style); }
       demonter = m.monter?.(zone, { artiste: a, couleurs: { fond: a.fond, encre: a.encre, accent: a.accent }, reduireMouvement: matchMedia('(prefers-reduced-motion: reduce)').matches, annoncer: () => {} }) || null;
     } catch (e) { console.error(e); zone.innerHTML = `<div class="f-attente"><p>L’atelier ne se charge pas. Recharge la page.</p></div>`; }
@@ -54,5 +55,7 @@ export async function monterGeste(racine, a) {
       document.body.append(l); l.click(); l.remove(); setTimeout(() => URL.revokeObjectURL(l.href), 4000);
     };
   }
-  return () => { try { demonter?.(); } catch (e) { console.error(e); } style?.remove(); zone.innerHTML = ''; };
+  const fin = () => { try { demonter?.(); } catch (e) { console.error(e); } style?.remove(); zone.innerHTML = ''; };
+  fin.clavier = clavier;
+  return fin;
 }
