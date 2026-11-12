@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Essayeur de titres</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="commun.css">
+<style>
+body{background:#1a1a1a;color:#f7f4ee;font-family:Archivo,Helvetica,Arial,sans-serif;padding:26px clamp(14px,4vw,56px) 110px}
+h1{font:800 clamp(26px,3.4vw,44px)/1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 8px}
+.chapo{margin:0 0 20px;max-width:64ch;font-size:16px;line-height:1.45;color:#b9b5ad}
+.saisie{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px}
+.saisie input{flex:1 1 280px;max-width:520px;padding:12px 14px;border:2px solid #f7f4ee;border-radius:6px;background:transparent;color:inherit;font:600 22px/1.1 Archivo,sans-serif}
+.pistes{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 30px;padding:0;list-style:none}
+.pistes button{border:1.5px solid #77736c;background:none;color:inherit;border-radius:999px;padding:8px 13px;font:600 14px/1 Archivo,sans-serif}
+.pistes button:hover,.pistes button[aria-pressed="true"]{background:#f7f4ee;color:#1a1a1a;border-color:#f7f4ee}
+h2{font:600 15px/1.2 Archivo,sans-serif;margin:34px 0 12px;color:#b9b5ad}
+#tuiles{display:flex;flex-wrap:wrap;gap:10px}
+#tuiles figure{margin:0;flex:0 1 clamp(64px,11vw,150px)}
+#tuiles figcaption{font-size:12px;padding-top:5px;color:#b9b5ad;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#tuiles .trou{flex:0 0 clamp(20px,3vw,44px)}
+#tuiles .signe{font:900 clamp(60px,10vw,140px)/1 "Sofia Cond",Impact,sans-serif;flex:0 0 auto}
+#bilan{margin:14px 0 0;font-size:15px;line-height:1.5;max-width:70ch}
+.typos{display:grid;gap:4px}
+.typos div{display:grid;grid-template-columns:150px 1fr;align-items:baseline;gap:14px;border-top:1px solid #3a3835;padding:10px 0 6px;overflow:hidden}
+.typos small{font-size:12.5px;color:#b9b5ad}
+.typos span{font-size:clamp(44px,9vw,132px);line-height:.95;white-space:nowrap}
+a{color:inherit}
+@media (max-width:640px){.typos div{grid-template-columns:1fr;gap:2px}}
+</style>
+</head>
+<body>
+<h1>Essayeur de titres</h1>
+<p class="chapo">Tape un titre : il s'écrit avec les lettres des artistes. Sous chaque lettre, l'artiste à qui elle appartient. Plus bas, le même titre dans les cinq typos du labo.</p>
+<div class="saisie"><input id="mot" type="text" value="INDEX" maxlength="26" autocomplete="off" spellcheck="false" aria-label="Titre à essayer"></div>
+<ul class="pistes" id="pistes"></ul>
+<h2>En lettres d'artistes</h2>
+<div id="tuiles"></div>
+<p id="bilan"></p>
+<h2>Dans les typos du labo</h2>
+<div class="typos" id="typos"></div>
+<script type="module">
+import { PAR_LETTRE, lienLabo } from './donnees.js';
+import { carte } from './lettres.js';
+const PISTES = ['INDEX', 'ONGLETS', 'CLASSEUR', 'FICHES', 'RÉPERTOIRE', 'CASSE', 'ABC', 'DE A À Z', 'INITIALES', 'DOSSIERS', '26'];
+const TYPOS = [['Condensée', "900 1em 'Sofia Cond',Impact,sans-serif", 'uppercase'], ['Grotesque', '800 .78em Archivo,sans-serif', 'none'], ['Bodoni', '900 .8em Bodoni,serif', 'none'], ['Mécane', "400 .74em 'Alfa Slab',serif", 'none'], ['Anton', '400 .9em Anton,Impact,sans-serif', 'uppercase']];
+const mot = document.getElementById('mot'), sansAccent = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase();
+document.getElementById('pistes').innerHTML = PISTES.map(p => `<li><button type="button">${p}</button></li>`).join('');
+function ecrire() {
+  const t = mot.value.trim() || 'INDEX', lettres = [...sansAccent(t)];
+  document.getElementById('tuiles').innerHTML = lettres.map(ch => { const a = PAR_LETTRE.get(ch);
+    return a ? `<figure>${carte(ch)}<figcaption>${a.court}</figcaption></figure>` : ch === ' ' ? '<span class="trou"></span>' : `<span class="signe">${ch}</span>`; }).join('');
+  const uniques = [...new Set(lettres.filter(ch => PAR_LETTRE.has(ch)))], doubles = lettres.filter((ch, i) => PAR_LETTRE.has(ch) && lettres.indexOf(ch) !== i);
+  document.getElementById('bilan').innerHTML = uniques.length
+    ? `Ce titre demande ${uniques.length} atelier${uniques.length > 1 ? 's' : ''} construit${uniques.length > 1 ? 's' : ''} : ${uniques.map(l => `${l} (${PAR_LETTRE.get(l).court})`).join(', ')}.` +
+      (doubles.length ? ` Lettres répétées : ${[...new Set(doubles)].join(', ')}.` : ' Aucune lettre répétée.') +
+      ` <a href="intercalaires.html?titre=${encodeURIComponent(t)}">Le voir sur les intercalaires</a>, ou <a href="b-initiales.html?titre=${encodeURIComponent(sansAccent(t))}">en initiales</a>.`
+    : 'Ce titre ne contient aucune lettre : il s’écrira dans la typo du site.';
+  document.getElementById('typos').innerHTML = TYPOS.map(([n, f, c]) => `<div><small>${n}</small><span style="font:${f.replace(/([\d.]+)em/, (_, k) => `calc(${k} * clamp(44px,9vw,132px))`)};text-transform:${c}">${t.replace(/</g, '&lt;')}</span></div>`).join('');
+  document.querySelectorAll('#pistes button').forEach(b => b.setAttribute('aria-pressed', String(b.textContent === t.toUpperCase())));
+}
+mot.addEventListener('input', ecrire);
+document.getElementById('pistes').addEventListener('click', e => { const b = e.target.closest('button'); if (b) { mot.value = b.textContent; ecrire(); } });
+const q = new URLSearchParams(location.search).get('titre'); if (q) mot.value = q;
+ecrire(); lienLabo();
+</script>
+</body>
+</html>

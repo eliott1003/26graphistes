@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Test E : l'étagère</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="commun.css">
+<style>
+html,body{height:100%}
+body{background:#e8e6e1;color:#111;overflow:hidden;font-family:Archivo,Helvetica,Arial,sans-serif;--h:min(54vh,35vw);--ws:calc(var(--h)*.125);--d:calc(var(--h)*.66)}
+.tete{position:fixed;top:18px;left:0;right:0;text-align:center;font:900 24px/1 "Sofia Cond",Impact,sans-serif;text-transform:uppercase;margin:0}
+.scene{position:fixed;inset:0;perspective:2200px;perspective-origin:50% 46%;touch-action:pan-y}
+.rayon{position:absolute;left:50%;top:46%;transform-style:preserve-3d}
+.boite{position:absolute;left:0;top:0;transform-style:preserve-3d;transition:transform .78s cubic-bezier(.3,.85,.3,1);cursor:pointer}
+.face{position:absolute;top:calc(var(--h)/-2);height:var(--h);backface-visibility:hidden;background:var(--c);color:var(--e);overflow:hidden}
+.face::after{content:"";position:absolute;inset:0;background:#000;opacity:var(--ombre,0);transition:opacity .78s;pointer-events:none}
+.tranche{width:var(--ws);left:calc(var(--ws)/-2);transform:translateZ(calc(var(--d)/2));display:flex;flex-direction:column;align-items:center;padding:calc(var(--ws)*.18) 0;gap:calc(var(--ws)*.2)}
+.tranche .lt{font-size:calc(var(--ws)*.62)}
+.tranche .nm{writing-mode:vertical-rl;font:400 calc(var(--ws)*.38)/1 Caslon,Georgia,serif;white-space:nowrap}
+.couv{width:var(--d);left:calc(var(--d)/-2);transform:rotateY(90deg) translateZ(calc(var(--ws)/2));display:flex;flex-direction:column;box-shadow:0 30px 60px -28px rgba(20,16,10,.55)}
+.couv .nomcouv{padding:calc(var(--d)*.06) calc(var(--d)*.07);font:900 calc(var(--d)*.17)/.88 "Sofia Cond",Impact,sans-serif;text-transform:uppercase;margin-top:auto}
+.boite.actif .tranche{--ombre:.5}
+.boite:not(.actif) .couv{--ombre:.45}
+.boite:not(.actif):hover{translate:0 calc(var(--h)*-.035)}
+.legende{position:fixed;left:0;right:0;top:calc(46% + var(--h)/2 + 34px);text-align:center;padding:0 20px}
+.legende h1{font:400 clamp(24px,2.6vw,36px)/1.1 Caslon,Georgia,serif;margin:0 0 6px}
+.legende p{margin:0 auto;font-size:15px;line-height:1.4;max-width:52ch}
+.fleche{position:fixed;top:calc(46% + var(--h)/2 + 30px);width:48px;height:48px;border:1.5px solid #111;border-radius:50%;background:none;font-size:20px;line-height:1}
+.fleche.g{left:22px}.fleche.d{right:22px}
+.fleche:hover{background:#111;color:#e8e6e1}
+@media (max-width:760px){body{--h:min(60vw,40svh)}.fleche{display:none}}
+</style>
+</head>
+<body>
+<p class="tete">26 graphistes</p>
+<main class="scene" id="scene"><div class="rayon" id="rayon"></div></main>
+<div class="legende" aria-live="polite"><h1 id="nom"></h1><p id="texte"></p></div>
+<button class="fleche g" type="button" aria-label="Lettre précédente">←</button>
+<button class="fleche d" type="button" aria-label="Lettre suivante">→</button>
+<script type="module">
+import { ARTISTES, PAR_LETTRE, ecouterClavier, lienLabo, ouvrirDossier } from './donnees.js';
+import { carte, glyphe } from './lettres.js';
+const rayon = document.getElementById('rayon');
+rayon.innerHTML = ARTISTES.map(a => `<div class="boite" data-l="${a.l}" style="--c:${a.fond};--e:${a.encre}" role="button" tabindex="0" aria-label="${a.l}, ${a.nom}">
+  <div class="face tranche"><span class="lt">${glyphe(a.l)}</span><span class="nm">${a.court}</span></div>
+  <div class="face couv">${carte(a.l)}<div class="nomcouv">${a.court}</div></div></div>`).join('');
+const B = [...rayon.children]; let actif = 10;
+function ranger() {
+  const cs = getComputedStyle(document.body), H = parseFloat(getComputedStyle(B[0].firstElementChild).height), ws = H * .125, d = H * .66, ecart = H * .03;
+  B.forEach((b, i) => { const r = i - actif, o = r === 0;
+    b.classList.toggle('actif', o);
+    const x = r * (ws + ecart) + Math.sign(r) * ((d - ws) / 2 + ecart * .8);
+    b.style.transform = o ? `translate3d(${x}px,${-H * .02}px,${H * .16}px) rotateZ(-3.5deg) rotateY(-90deg)` : `translate3d(${x}px,0,0)`;
+    b.style.zIndex = 100 - Math.abs(r); });
+  const a = ARTISTES[actif];
+  document.getElementById('nom').textContent = a.nom;
+  document.getElementById('texte').textContent = `${a.dates}, ${a.courant}. ${a.geste}`;
+}
+function aller(i) { if (i === actif) return ouvrirDossier(ARTISTES[i].l, 'blanc', 'affiche'); actif = (i + 26) % 26; ranger(); }
+rayon.addEventListener('click', e => { const b = e.target.closest('.boite'); if (b) aller(B.indexOf(b)); });
+document.querySelector('.fleche.g').addEventListener('click', () => aller(actif - 1));
+document.querySelector('.fleche.d').addEventListener('click', () => aller(actif + 1));
+ecouterClavier({ lettre: l => aller(ARTISTES.findIndex(a => a.l === l)), fleche: p => aller(actif + p), entree: () => ouvrirDossier(ARTISTES[actif].l, 'blanc', 'affiche') });
+let x0 = null; const sc = document.getElementById('scene');
+sc.addEventListener('pointerdown', e => { x0 = e.clientX; }); sc.addEventListener('pointerup', e => { if (x0 !== null && Math.abs(e.clientX - x0) > 50) aller(actif + (e.clientX < x0 ? 2 : -2)); x0 = null; });
+let molette = 0; addEventListener('wheel', e => { const n = Date.now(); if (n - molette < 220) return; const dlt = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY; if (Math.abs(dlt) < 8) return; molette = n; aller(actif + (dlt > 0 ? 1 : -1)); }, { passive: true });
+addEventListener('resize', ranger); ranger(); lienLabo();
+</script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+/* Labo : le gabarit unique d'une page d'artiste (l'intérieur du dossier). */
+.feuille{--a-accent:var(--c,#e2001a);background:var(--feuille,#fff);color:var(--feuille-encre,#141414);max-width:1060px;margin:0 auto;padding:clamp(18px,3.2vw,44px);font-family:var(--t-texte,Archivo,sans-serif);font-size:17px;line-height:1.45}
+.f-tete{display:grid;grid-template-columns:minmax(120px,200px) 1fr;gap:clamp(16px,3vw,40px);align-items:end;padding-bottom:clamp(18px,3vw,34px);border-bottom:2px solid currentColor}
+.f-tete h2{font-family:var(--t-titre,Archivo,sans-serif);font-weight:var(--t-titre-g,800);text-transform:var(--t-titre-casse,none);letter-spacing:var(--t-titre-ls,-.01em);font-size:clamp(40px,7vw,104px);line-height:.92;margin:0 0 .14em;outline:none}
+.f-meta{margin:0 0 .7em;font-family:var(--t-etiq,inherit);font-size:14px}
+.f-qui{margin:0;max-width:58ch;font-family:var(--t-nom,inherit);font-size:clamp(17px,1.5vw,21px);line-height:1.38}
+.f-geste{padding:clamp(18px,3vw,34px) 0;border-bottom:2px solid currentColor}
+.f-geste h3{font-family:var(--t-nom,inherit);font-weight:400;font-size:clamp(24px,3vw,40px);line-height:1.1;margin:0 0 .5em;max-width:24ch}
+.f-zone{min-height:200px}
+.f-attente{border:2px dashed currentColor;padding:clamp(18px,3vw,36px);display:grid;gap:10px;max-width:640px}
+.f-attente p{margin:0}
+.f-attente .petit{font-family:var(--t-etiq,inherit);font-size:13.5px}
+.f-oeuvres{padding-top:clamp(18px,3vw,34px)}
+.f-oeuvres h3{font-family:var(--t-etiq,inherit);font-weight:500;font-size:14px;margin:0 0 14px}
+.f-cadres{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:18px}
+.f-cadres figure{margin:0}
+.f-cadres .cadre{aspect-ratio:3/4;background:repeating-linear-gradient(135deg,transparent 0 11px,color-mix(in srgb,currentColor 9%,transparent) 11px 12px);border:1.5px solid currentColor;display:grid;place-items:center;padding:14px;text-align:center;font-family:var(--t-etiq,inherit);font-size:12.5px}
+.f-cadres figcaption{padding-top:8px;font-size:14px}
+.f-outils[hidden]{display:none}
+.f-outils{display:flex;justify-content:flex-end;gap:10px;margin-top:14px}
+/* Classes dont le module Kruger a besoin (elles viennent du socle v1). */
+.feuille .bouton{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:8px 16px;border:1.5px solid currentColor;border-radius:4px;background:transparent;color:inherit;cursor:pointer;font-family:var(--t-etiq,inherit);font-size:14px;text-decoration:none}
+.feuille .bouton.plein{background:var(--a-accent);border-color:var(--a-accent);color:#fff}
+.feuille .etiquette{font-family:var(--t-etiq,inherit);font-size:13px;margin:0}
+.feuille .note{font-size:13px}
+@media (max-width:640px){.f-tete{grid-template-columns:96px 1fr;align-items:start}.feuille{font-size:16px}}

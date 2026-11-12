@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Les 26 lettres, version 1</title>
+<link rel="stylesheet" href="commun.css">
+<style>
+body{background:#e9e9e6;color:#111;font-family:Archivo,sans-serif;padding:32px clamp(16px,4vw,56px) 80px}
+h1{font:800 clamp(28px,4vw,48px)/1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 8px}
+p.chapo{max-width:60ch;margin:0 0 28px;font-size:16px;line-height:1.45}
+.planche{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
+figure{margin:0}
+figcaption{display:flex;justify-content:space-between;gap:8px;align-items:baseline;padding:7px 2px 0;font-size:13px}
+figcaption .o{display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:26px;padding:0 8px;border-radius:5px 5px 0 0;font-size:19px}
+</style>
+</head>
+<body>
+<h1>Les 26 lettres, version 1</h1>
+<p class="chapo">Une lettre par artiste, dessinée dans son langage. Ce sont des premiers jets : dis-moi celles que tu gardes, celles que tu redessines dans Illustrator, et celles qui ne vont pas du tout. À droite de chaque nom, la même lettre en petit, telle qu'elle apparaît sur un onglet.</p>
+<div class="planche" id="planche"></div>
+<script type="module">
+import { ARTISTES, lienLabo } from './donnees.js';
+import { carte, glyphe } from './lettres.js';
+document.getElementById('planche').innerHTML = ARTISTES.map(a =>
+  `<figure>${carte(a.l)}<figcaption><span>${a.court}</span><span class="o" style="background:${a.fond};color:${a.encre}">${glyphe(a.l)}</span></figcaption></figure>`).join('');
+lienLabo();
+</script>
+</body>
+</html>

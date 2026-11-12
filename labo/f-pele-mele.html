@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Test F : le pêle-mêle</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="commun.css">
+<style>
+html,body{height:100%}
+body{background:#fff;color:#0b0b0b;overflow:hidden;font-family:Archivo,Helvetica,Arial,sans-serif}
+.tete{position:fixed;left:24px;top:18px;right:24px;display:flex;justify-content:space-between;align-items:flex-start;gap:16px;z-index:500;pointer-events:none}
+.tete h1{font:800 clamp(30px,4.6vw,68px)/.9 Archivo,sans-serif;letter-spacing:-.035em;margin:0}
+.tete button{pointer-events:auto;border:2px solid #0b0b0b;background:#fff;font:600 15px/1 Archivo,sans-serif;padding:12px 18px;border-radius:999px}
+.tete button:hover{background:#0b0b0b;color:#fff}
+.table{position:fixed;inset:0}
+.fichecarte{position:absolute;left:0;top:0;width:var(--w);padding:0;border:0;background:var(--c);color:var(--e);text-align:left;transition:transform .8s cubic-bezier(.3,.9,.25,1);box-shadow:0 2px 0 rgba(0,0,0,.08),0 14px 26px -16px rgba(0,0,0,.45);will-change:transform}
+.fichecarte span{display:block;padding:.5em .6em .55em;font:600 calc(var(--w)*.1)/1.1 Archivo,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fichecarte:hover{z-index:300!important}
+.fichecarte.actif{z-index:400!important}
+.cartel{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);width:min(560px,calc(100% - 32px));text-align:center;font-size:15px;line-height:1.4;margin:0;z-index:450;background:#fff;padding:8px 12px}
+@media (max-width:700px){.tete h1{font-size:30px}.tete button{padding:10px 14px;font-size:14px}}
+</style>
+</head>
+<body>
+<header class="tete"><h1>26 graphistes</h1><button type="button" id="bascule">Ranger</button></header>
+<main class="table" id="table"></main>
+<p class="cartel" id="cartel" role="status">Tape une lettre pour sortir une carte. Espace range ou mélange.</p>
+<script type="module">
+import { ARTISTES, PAR_LETTRE, ecouterClavier, lienLabo, ouvrirDossier } from './donnees.js';
+import { carte } from './lettres.js';
+const table = document.getElementById('table'), cartel = document.getElementById('cartel'), bouton = document.getElementById('bascule');
+table.innerHTML = ARTISTES.map(a => `<button class="fichecarte" data-l="${a.l}" style="--c:${a.fond};--e:${a.encre}" aria-label="${a.l}, ${a.nom}">${carte(a.l)}<span>${a.court}</span></button>`).join('');
+const C = [...table.children]; let range = false, choisi = null, graine = 5;
+const alea = () => (graine = (graine * 16807) % 2147483647) / 2147483647;
+function poser() {
+  const L = innerWidth, H = innerHeight, etroit = L < 700, col = etroit ? 5 : L > H * 1.5 ? 9 : 7, lig = Math.ceil(26 / col);
+  const haut = etroit ? 70 : 110, bas = 96, w = Math.min((L - 40) / col - 10, (H - haut - bas) / lig / 1.34 - 8);
+  table.style.setProperty('--w', w + 'px'); graine = 5;
+  const lg = col * (w + 10) - 10, x0 = (L - lg) / 2, hc = w * 1.3;
+  C.forEach((c, i) => {
+    let x, y, r = 0, s = 1;
+    if (range) { x = x0 + (i % col) * (w + 10); y = haut + Math.floor(i / col) * (hc + 8); alea(); alea(); alea(); }
+    else { x = L * .06 + alea() * (L * .88 - w); y = haut + alea() * (H - haut - bas - hc); r = (alea() - .5) * 44; }
+    if (c.dataset.l === choisi) { s = Math.min(2.6, (H - 200) / hc); x = (L - w) / 2; y = (H - hc) / 2 - 30; r = 0; }
+    c.style.transform = `translate(${x}px,${y}px) rotate(${r}deg) scale(${s})`; c.style.zIndex = range ? 1 : 1 + i;
+    c.classList.toggle('actif', c.dataset.l === choisi);
+  });
+  bouton.textContent = range ? 'Mélanger' : 'Ranger';
+}
+function choisir(l) {
+  const a = PAR_LETTRE.get(l); if (!a) return;
+  if (choisi === l) return ouvrirDossier(l, 'blanc', 'grotesque');
+  choisi = l; cartel.innerHTML = `<b>${a.nom}</b>, ${a.dates}. ${a.geste} Entrée pour ouvrir.`; poser();
+}
+function lacher() { choisi = null; cartel.textContent = 'Tape une lettre pour sortir une carte. Espace range ou mélange.'; poser(); }
+const basculer = () => { range = !range; poser(); };
+bouton.addEventListener('click', basculer);
+table.addEventListener('click', e => { const c = e.target.closest('.fichecarte'); if (c) choisir(c.dataset.l); else lacher(); });
+addEventListener('keydown', e => { if (e.key === ' ' && !(e.target instanceof HTMLButtonElement)) { e.preventDefault(); basculer(); } });
+ecouterClavier({ lettre: choisir, entree: () => choisi && ouvrirDossier(choisi, 'blanc', 'grotesque'), echap: lacher,
+  fleche(p) { const i = ARTISTES.findIndex(a => a.l === choisi), l = ARTISTES[(i + p + 26) % 26].l; choisi = null; choisir(l); } });
+addEventListener('resize', poser); poser(); lienLabo();
+</script>
+</body>
+</html>

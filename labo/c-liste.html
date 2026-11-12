@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Test C : la liste imprimée</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="commun.css">
+<style>
+body{background:#dcdcd7;color:#0d0d0d;font-family:Archivo,Helvetica,Arial,sans-serif}
+.page{display:grid;grid-template-columns:minmax(0,1fr) min(36vw,460px);gap:clamp(16px,3vw,48px);padding:0 clamp(12px,2.6vw,40px) 120px}
+.tete{grid-column:1/-1;display:flex;justify-content:space-between;align-items:baseline;gap:20px;padding:18px 0 14px;border-bottom:3px solid #0d0d0d;font-size:15px}
+.tete b{font:900 26px/1 "Sofia Cond",Impact,sans-serif;text-transform:uppercase}
+.liste{list-style:none;margin:0;padding:0}
+.ligne{display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%;padding:.07em 10px 0;margin:0;border:0;border-bottom:1.5px solid #0d0d0d;background:none;color:inherit;text-align:left;font:900 clamp(38px,5.5vw,88px)/.9 "Sofia Cond",Impact,sans-serif;text-transform:uppercase;letter-spacing:.004em}
+.ligne .n{filter:url(#rugueux);white-space:nowrap;overflow:hidden;text-overflow:clip;padding-bottom:.02em}
+.ligne .n i{font-style:normal;display:inline-block;min-width:.62em}
+.ligne .t{display:flex;gap:5px;flex:none}
+.ligne .t span{font:600 12px/1 Archivo,sans-serif;text-transform:none;letter-spacing:0;background:#0d0d0d;color:#dcdcd7;padding:5px 7px 4px;border-radius:4px;white-space:nowrap}
+.ligne.actif{background:#0d0d0d;color:#dcdcd7}
+.ligne.actif .t span{background:var(--c);color:var(--e)}
+.ligne:focus-visible{outline-offset:-3px}
+.fiche{position:sticky;top:0;align-self:start;padding-top:22px;height:100vh;display:flex;flex-direction:column;gap:12px}
+.fiche .carte{max-height:min(58vh,460px);width:auto;aspect-ratio:1;max-width:100%}
+.fiche h2{font:900 clamp(30px,3.4vw,52px)/.92 "Sofia Cond",Impact,sans-serif;text-transform:uppercase;margin:6px 0 0;filter:url(#rugueux)}
+.fiche p{margin:0;font-size:15px;line-height:1.42;max-width:44ch}
+.fiche .g{font-weight:600}
+@media (max-width:800px){
+  .page{grid-template-columns:1fr;padding-bottom:150px}
+  .ligne .t{display:none}
+  .fiche{position:fixed;left:0;right:0;bottom:0;top:auto;height:auto;flex-direction:row;align-items:center;gap:12px;background:#0d0d0d;color:#dcdcd7;padding:10px 12px;z-index:5}
+  .fiche .carte{width:84px;flex:none}
+  .fiche h2{font-size:24px;margin:0}
+  .fiche .q{display:none}
+  .fiche p{font-size:13px}
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="rugueux" x="-3%" y="-8%" width="106%" height="116%"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" seed="7"/><feDisplacementMap in="SourceGraphic" scale="3" xChannelSelector="R" yChannelSelector="G"/></filter></svg>
+<div class="page">
+  <header class="tete"><b>26 graphistes</b><span>Tape une lettre, ou survole un nom. Entrée ouvre le dossier.</span></header>
+  <ul class="liste" id="liste"></ul>
+  <aside class="fiche" id="fiche" aria-live="polite"></aside>
+</div>
+<script type="module">
+import { ARTISTES, PAR_LETTRE, ecouterClavier, lienLabo, ouvrirDossier } from './donnees.js';
+import { carte } from './lettres.js';
+const liste = document.getElementById('liste'), fiche = document.getElementById('fiche');
+liste.innerHTML = ARTISTES.map(a => `<li><button class="ligne" data-l="${a.l}" style="--c:${a.fond};--e:${a.encre}"><span class="n"><i>${a.l}</i> ${a.nom}</span><span class="t"><span>${a.dates}</span><span>${a.pays}</span></span></button></li>`).join('');
+let choisi = null;
+function choisir(l, defiler = true) {
+  const a = PAR_LETTRE.get(l); if (!a) return;
+  if (choisi === l) return;
+  choisi = l;
+  liste.querySelectorAll('.ligne').forEach(b => b.classList.toggle('actif', b.dataset.l === l));
+  fiche.innerHTML = `${carte(l)}<div><h2>${a.nom}</h2><p class="q">${a.qui}</p><p class="g">${a.geste}</p></div>`;
+  if (defiler) liste.querySelector(`[data-l="${l}"]`).scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+}
+liste.addEventListener('pointerover', e => { const b = e.target.closest('.ligne'); if (b && e.pointerType === 'mouse') choisir(b.dataset.l, false); });
+liste.addEventListener('click', e => { const b = e.target.closest('.ligne'); if (!b) return; if (choisi === b.dataset.l) ouvrirDossier(choisi, 'imprime', 'anton'); else choisir(b.dataset.l, false); });
+ecouterClavier({ lettre: l => choisi === l ? ouvrirDossier(l, 'imprime', 'anton') : choisir(l), entree: () => choisi && ouvrirDossier(choisi, 'imprime', 'anton'),
+  fleche(p) { const i = ARTISTES.findIndex(a => a.l === choisi); choisir(ARTISTES[(i + p + 26) % 26].l); } });
+choisir('A', false); lienLabo();
+</script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>26 graphistes : les intercalaires (test)</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="commun.css">
+<link rel="stylesheet" href="page.css">
+<link rel="stylesheet" href="intercalaires.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="rugueux" x="-5%" y="-10%" width="110%" height="120%"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="4"/><feDisplacementMap in="SourceGraphic" scale="3.2" xChannelSelector="R" yChannelSelector="G"/></filter></svg>
+<header class="tete">
+  <p class="marque">26 graphistes</p>
+  <h1 id="titre"></h1>
+  <p class="chapo">Tape une lettre : le dossier sort. Tape-la encore : il s’ouvre.</p>
+</header>
+<main class="classeur" id="classeur" aria-label="Les 26 dossiers"></main>
+<section id="page" hidden aria-label="Dossier ouvert"></section>
+<button type="button" id="ouvrir-reglages">Réglages</button>
+<aside id="reglages" hidden aria-label="Réglages du test"></aside>
+<p id="annonce" role="status" aria-live="polite"></p>
+<script type="module" src="intercalaires.js"></script>
+</body>
+</html>

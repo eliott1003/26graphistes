@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Test B : les initiales</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="commun.css">
+<style>
+body{background:#0b0b0b;color:#f1ece2;font-family:Archivo,Helvetica,Arial,sans-serif;height:300vh}
+.scene{position:fixed;inset:0;overflow:hidden}
+.it{position:absolute;left:0;top:0;display:flex;align-items:flex-start;padding:0;border:0;background:none;color:inherit;white-space:nowrap;transform-origin:0 0;transition:transform .95s cubic-bezier(.7,0,.2,1),color .2s;will-change:transform}
+.it .ini{font-size:var(--ini,80px);line-height:.8;transition:font-size .95s cubic-bezier(.7,0,.2,1);display:block}
+.it .ini .gl{display:block;line-height:.8}
+.it .av,.it .ap{font-weight:600;font-size:var(--pt,12px);line-height:1;letter-spacing:0;transition:font-size .95s cubic-bezier(.7,0,.2,1);padding-top:.1em}
+.it .av{padding-right:.25em;text-align:right}
+.it .ap{padding-left:.25em}
+.it.actif,.it:hover,.it:focus-visible{color:var(--c)}
+.it:focus-visible{outline:0}
+.cartel{position:fixed;left:84px;bottom:22px;right:24px;display:flex;justify-content:space-between;align-items:flex-end;gap:20px;font-size:14px;line-height:1.35;pointer-events:none}
+.cartel p{margin:0;max-width:60ch}
+.cartel b{font-weight:800}
+.cartel .pas{white-space:nowrap;color:#8d8a84}
+@media (max-width:700px){
+  body{height:auto}
+  .scene{position:static;overflow:visible;padding:20px 0 120px}
+  .it{position:relative;transform:none!important;margin:0 0 6px}
+  .cartel{background:#0b0b0b;padding:12px 16px 12px 84px;left:0;right:0;bottom:0}
+  .cartel .pas{display:none}
+}
+</style>
+</head>
+<body>
+<main class="scene" id="scene" aria-label="Les 26 graphistes, par leur initiale"></main>
+<div class="cartel"><p id="cartel" role="status">Tape une lettre pour choisir un graphiste. Fais défiler pour changer la composition.</p><p class="pas" id="pas"></p></div>
+<script type="module">
+import { ARTISTES, PAR_LETTRE, ecouterClavier, lienLabo, decouper, ouvrirDossier } from './donnees.js';
+import { glyphe } from './lettres.js';
+
+const scene = document.getElementById('scene'), cartel = document.getElementById('cartel');
+const MOT = [...new Set((new URLSearchParams(location.search).get('titre') || 'INDEX').toUpperCase())].filter(l => PAR_LETTRE.has(l));
+const etroit = () => innerWidth < 700;
+scene.innerHTML = ARTISTES.map(a => { const [av, ap] = decouper(a);
+  return `<button class="it" data-l="${a.l}" style="--c:${a.fond === '#0c0c0c' || a.fond === '#2b2b2b' || a.fond === '#172a4d' ? a.encre : a.fond}" aria-label="${a.l}, ${a.nom}"><span class="av">${av}</span><span class="ini">${glyphe(a.l)}</span><span class="ap">${ap}</span></button>`; }).join('');
+const IT = [...scene.children].map(el => ({ el, l: el.dataset.l, av: el.children[0], ini: el.children[1], ap: el.children[2] }));
+
+/* Mesures : largeur du petit texte et de l'initiale, pour une taille de 100 px. */
+const cv = document.createElement('canvas').getContext('2d');
+function mesurer() {
+  cv.font = '600 100px Archivo';
+  for (const it of IT) {
+    it.wav = it.av.textContent ? cv.measureText(it.av.textContent).width / 100 + .25 : 0;
+    it.wap = it.ap.textContent ? cv.measureText(it.ap.textContent).width / 100 + .25 : 0;
+    const t = parseFloat(getComputedStyle(it.ini).fontSize) || 80;
+    it.wini = it.ini.getBoundingClientRect().width / t || .6;
+  }
+}
+/* Hasard reproductible : la composition éclatée est la même à chaque visite. */
+let graine = 11; const alea = () => (graine = (graine * 16807) % 2147483647) / 2147483647;
+
+function composer(k) {
+  const L = innerWidth, H = innerHeight;
+  if (etroit()) { IT.forEach(it => { it.el.style.setProperty('--ini', '44px'); it.el.style.setProperty('--pt', '13px'); it.el.style.marginLeft = Math.max(8, 150 - it.wav * 13) + 'px'; }); return; }
+  const poser = (it, x, y, ini, pt, rot = 0) => { it.el.style.setProperty('--ini', ini + 'px'); it.el.style.setProperty('--pt', pt + 'px'); it.el.style.transform = `translate(${x}px,${y}px) rotate(${rot}deg)`; };
+  if (k === 0) { // le titre : ses initiales en très grand, le reste de l'alphabet rangé dessous
+    const tit = MOT.map(l => IT.find(i => i.l === l)), reste = IT.filter(i => !MOT.includes(i.l));
+    const pt = 13, ecart = 26, petits = tit.reduce((s, i) => s + (i.wav + i.wap) * pt, 0) + ecart * (tit.length - 1);
+    const ini = Math.min(H * .46, (L * .92 - petits) / tit.reduce((s, i) => s + i.wini, 0));
+    let x = (L - (petits + ini * tit.reduce((s, i) => s + i.wini, 0))) / 2; const y = H * .13;
+    for (const i of tit) { poser(i, x, y, ini, pt); x += (i.wav + i.wap) * pt + i.wini * ini + ecart; }
+    const col = 7, lc = L * .92 / col, y0 = y + ini * .8 + Math.max(60, H * .09), hl = (H - y0 - 64) / Math.ceil(reste.length / col), pi = Math.min(hl * .7, lc * .5);
+    reste.forEach((i, n) => poser(i, L * .04 + (n % col) * lc + Math.max(0, 84 - i.wav * 10), y0 + Math.floor(n / col) * hl, pi, 9));
+  } else if (k === 1) { // éclaté : chaque nom à sa place, certains tournés
+    graine = 11; const col = 7, lig = 4, lc = L * .95 / col, hl = (H - 80) / lig;
+    IT.forEach((i, n) => { const ini = 60 + alea() * Math.min(84, hl * .42), t = alea(), rot = t < .14 ? -90 : t < .26 ? 90 : 0;
+      const x = L * .025 + (n % col) * lc + alea() * lc * .12 + (rot === 90 ? ini * .8 + 20 : rot === -90 ? 24 : Math.max(0, 78 - i.wav * 12)), y = 16 + Math.floor(n / col) * hl + alea() * hl * .16 + (rot === -90 ? hl * .78 : 0);
+      poser(i, x, y, ini, 11, rot); });
+  } else { // l'axe : l'alphabet se lit de haut en bas, les noms s'accrochent de part et d'autre
+    const lig = 13, hl = (H - 96) / lig, ini = hl * .92, pt = Math.min(15, hl * .3);
+    IT.forEach((i, n) => poser(i, L * (n < lig ? .27 : .73) - i.wav * pt, 22 + (n % lig) * hl, ini, pt));
+  }
+  document.getElementById('pas').textContent = ['Le titre', 'Éclaté', 'L’axe'][k] + `, ${k + 1} sur 3`;
+}
+
+let compo = -1, choisi = null;
+function selon() { const k = etroit() ? 2 : Math.min(2, Math.round(scrollY / innerHeight)); if (k !== compo) { compo = k; composer(k); } }
+function choisir(l) {
+  const a = PAR_LETTRE.get(l); if (!a) return;
+  if (choisi === l) return ouvrirDossier(l);
+  choisi = l; IT.forEach(i => i.el.classList.toggle('actif', i.l === l));
+  cartel.innerHTML = `<b>${a.nom}</b>, ${a.dates}. ${a.geste} Entrée pour ouvrir son dossier.`;
+}
+scene.addEventListener('click', e => { const b = e.target.closest('.it'); if (b) choisir(b.dataset.l); });
+ecouterClavier({ lettre: choisir, entree: () => choisi && ouvrirDossier(choisi), echap() { choisi = null; IT.forEach(i => i.el.classList.remove('actif')); },
+  fleche(p) { const i = ARTISTES.findIndex(a => a.l === choisi); choisi === null ? choisir('A') : (choisi = null, choisir(ARTISTES[(i + p + 26) % 26].l)); } });
+addEventListener('scroll', selon, { passive: true });
+addEventListener('resize', () => { compo = -1; mesurer(); selon(); });
+(document.fonts?.ready || Promise.resolve()).then(() => { mesurer(); compo = -1; selon(); });
+mesurer(); selon(); lienLabo();
+</script>
+</body>
+</html>
