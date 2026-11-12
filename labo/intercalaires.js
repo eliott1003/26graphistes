@@ -108,7 +108,7 @@ function disposer() {
   if (fixe === 'trop') { fixe = true; classeur.classList.add('fixe'); poser(); }
   if (mode === 'alphabet') rs.forEach((rg, r) => {
     const e = document.createElement('span'); e.className = 'rangee-nom'; e.dataset.r = r;
-    e.textContent = `${rg[0]} à ${rg[rg.length - 1]}`; e.style.top = r * PAS + HT + 'px'; e.style.zIndex = r * 40 + 39;
+    e.textContent = rg.length > 1 ? `${rg[0]} à ${rg[rg.length - 1]}` : rg[0]; e.style.top = r * PAS + HT + 'px'; e.style.zIndex = r * 40 + 39;
     classeur.append(e);
   });
   const bas = mode === 'pile' ? 96 : mode === 'repertoire' ? HT + (etroit ? 330 : 360) : etroit ? 190 : 170;
