@@ -68,8 +68,10 @@ export default {
       else { x.fillStyle = '#f3e6c9'; x.fillRect(0, 0, W, H); x.fillStyle = 'rgba(0,0,0,.05)'; x.fillRect(0, H * .86, W, H * .14); }
       const haut = [[-l * .42, -h / 2], [l * .42, -h / 2]].map(([a, b]) => [g.x + a * Math.cos(ang) - b * Math.sin(ang), g.y + a * Math.sin(ang) + b * Math.cos(ang)]);
       // l'ombre de la pancarte sur le mur
-      x.save(); x.translate((g.x + .03) * W, (g.y + .035) * W); x.rotate(ang); if (pancarte) { x.filter = `blur(${W * .012}px) brightness(0) opacity(.25)`; x.drawImage(pancarte, -l / 2 * W, -h / 2 * W, l * W, h * W); } // l'ombre suit la forme détourée
-      else { x.filter = `blur(${W * .012}px)`; x.fillStyle = 'rgba(0,0,0,.22)'; x.fillRect(-l / 2 * W, -h / 2 * W, l * W, h * W); } x.restore();
+      x.save(); x.translate((g.x + .03) * W, (g.y + .035) * W); x.rotate(ang); if (pancarte) { // silhouette noire préparée une fois (ctx.filter ne marche pas sur Safari iPhone : la pancarte se dédoublait)
+        if (!pancarte.ombre) { const o = document.createElement('canvas'); o.width = pancarte.naturalWidth; o.height = pancarte.naturalHeight; const go = o.getContext('2d'); go.drawImage(pancarte, 0, 0); go.globalCompositeOperation = 'source-in'; go.fillStyle = '#000'; go.fillRect(0, 0, o.width, o.height); pancarte.ombre = o; }
+        x.globalAlpha = .22; x.drawImage(pancarte.ombre, -l / 2 * W, -h / 2 * W, l * W, h * W); x.globalAlpha = 1; } // l'ombre suit la forme détourée
+      else { x.fillStyle = 'rgba(0,0,0,.22)'; x.fillRect(-l / 2 * W, -h / 2 * W, l * W, h * W); } x.restore();
       if (R.ficelles) { // les deux ficelles et le clou
         x.strokeStyle = '#2a2018'; x.lineWidth = Math.max(1.5, W * .005); x.lineCap = 'round'; x.beginPath();
         haut.forEach(p => { x.moveTo(c.x * W, c.y * W); x.lineTo(p[0] * W, p[1] * W); }); x.stroke();
