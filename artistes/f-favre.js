@@ -17,8 +17,10 @@ export default {
   css: `
 .fv{display:grid;grid-template-columns:minmax(0,1fr) minmax(170px,230px);gap:clamp(14px,2.4cqw,36px);align-items:end;height:100cqh}
 .fv-scene{height:100cqh;min-width:0;display:grid;place-items:center;container-type:size}
-.fv-mot{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:clamp(4px,1cqw,12px);width:min(100%,calc(var(--n)*78cqh));max-width:100%}
-.fv-carte{aspect-ratio:1;background:#fff;color:#121a3a;display:grid;place-items:center;position:relative;overflow:hidden;box-shadow:0 22px 40px -26px rgba(0,0,0,.55);container-type:inline-size}
+/* une seule bande noire : pas de fond rose entre les lettres */
+.fv-mot:empty{display:none}
+.fv-mot{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:0;background:#000;padding:clamp(10px,2.4cqw,28px);box-shadow:0 26px 50px -30px rgba(0,0,0,.6);box-sizing:border-box;width:min(100%,calc(var(--n)*78cqh));max-width:100%}
+.fv-carte{aspect-ratio:1;background:#000;color:#f2ead8;display:grid;place-items:center;position:relative;overflow:hidden;container-type:inline-size}
 .fv-carte img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
 .fv-carte b{font:900 72cqw/1 Bodoni,Didot,serif}
 .fv-carte small{position:absolute;left:0;right:0;bottom:5%;text-align:center;font:500 max(8px,5.2cqw)/1 "DM Mono",monospace;opacity:.5}
