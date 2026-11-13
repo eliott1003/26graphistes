@@ -10,7 +10,7 @@
 // dans img/p/ et donner leurs noms dans COUCHES, par exemple { c: 'couche-1.png', m: 'couche-2.png', j: 'couche-3.png' }.
 // Le module les teinte lui-même en cyan, magenta et jaune.
 
-const COUCHES = null;
+const COUCHES = { c: 'theatre-c.png', m: 'theatre-m.png', j: 'theatre-j.png' }; // séparées par canal depuis la photo d'Eliott (img/p/ref.jpg). Autre jeu prêt : regret-c/m/j.png
 const FORMAT = 2 / 3; // largeur / hauteur de la feuille (provisoire ; avec les fichiers d'Eliott, le format est celui des fichiers)
 const ENCRES = { c: '#00aeef', m: '#ec008c', j: '#ffe600' };
 const FILTRES = [

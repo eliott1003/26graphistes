@@ -10,7 +10,7 @@
 //   clou = le point d'accroche sur l'affiche (fractions de la largeur et de la hauteur) ; largeur = celle de la pancarte (fraction
 //   de la largeur de l'affiche) ; fil = distance du clou au centre de la pancarte (fraction de la largeur) ; ficelles = les dessiner ou non.
 
-const FICHIERS = null;
+const FICHIERS = { fond: 'fond.png', pancarte: 'pancarte.png', clou: [.482, .494], largeur: .425, fil: .171, ficelles: false };
 const FORMAT = 905 / 1280; // affiche suisse (F4), pour la version provisoire
 const DEFAUT = { clou: [.5, .1], largeur: .58, fil: .56, ficelles: true };
 const PESANTEUR = 5.2, RAIDEUR = 300, AMORTI = 7, AIR = .35; // en largeurs d'affiche et en secondes
