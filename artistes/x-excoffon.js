@@ -1,18 +1,16 @@
 // X · Roger Excoffon — affiche de la Caravelle, Air France (1964).
-// « 450 avions » : Excoffon raconte avoir dessiné 450 avions avant de trouver le geste de l'affiche.
-// On dessine l'avion d'un seul geste : le trait devient un coup de pinceau (épais quand on va lentement, fin et sec quand on va vite).
-// Chaque essai reçoit une note de ressemblance, une jauge se remplit, le compteur avance (essai n / 450) et les essais se rangent en grille.
-// « Voir la vraie » montre l'affiche : c'est l'image d'Eliott (img/x/ref.jpg, déclarée dans labo/donnees.js : images: [{ f: 'ref.jpg', t: '…' }]).
-// PROVISOIRE tant que l'image n'est pas fournie :
-//  - MODELE (le tracé qui sert à noter) est un avion d'un seul geste inventé pour l'exercice, PAS le tracé de la Caravelle : à retracer sur l'image ;
-//  - la couleur de l'encre, celle de la feuille et le format (FORMAT) sont à caler sur l'affiche.
-// L'affiche n'est pas redessinée en code (œuvre protégée) : la fidélité vient de l'image d'Eliott.
+// « 450 avions » : Excoffon raconte avoir dessiné 450 avions, pendant des semaines, avant de trouver le geste de l'affiche.
+// On dessine l'avion d'un seul geste : le trait devient un coup de pinceau clair sur le bleu nuit (épais lentement, fin et sec vite).
+// Le tracé à suivre reste toujours visible en pointillé ; l'affiche est toujours montrée à côté (img/x/ref.jpg, fournie par Eliott).
+// Chaque essai reçoit une note de ressemblance avec le tracé, une jauge se remplit, le compteur avance (essai n / 450), les essais se rangent en grille.
+// Format, bleu du fond et place du tracé relevés sur l'image. L'affiche n'est pas redessinée en code (œuvre protégée) :
+// MODELE est un tracé d'un seul geste qui en suit la silhouette (aile, fuselage jusqu'au nez, retour, dérive), pour guider et noter.
 
-const FORMAT = 62 / 100;                 // largeur / hauteur de la feuille
-const FEUILLE = '#f6f3ea', ENCRE = '#1d3c8f';
+const FORMAT = 1100 / 850;               // largeur / hauteur de la feuille (l'affiche est en largeur)
+const FEUILLE = '#0c2d57', ENCRE = '#e6f3fb';
 const TOTAL = 450, POILS = 11;
-// Le modèle provisoire, en largeurs de feuille : dérive, fuselage jusqu'au nez, retour sous le ventre, aile, retour.
-const MODELE = [[.10, .52], [.17, .70], [.40, .665], [.66, .585], [.92, .46], [.70, .62], [.56, .68], [.34, 1.02], [.50, .74]];
+// Le tracé à suivre, en largeurs de feuille : bout de l'aile, fuselage jusqu'au nez, retour par le dos, montée et descente de la dérive.
+const MODELE = [[.13, .55], [.40, .44], [.62, .375], [.97, .32], [.66, .35], [.42, .365], [.30, .32], [.19, .21], [.15, .215], [.26, .41]];
 const JITTER = Array.from({ length: POILS }, (_, i) => .72 + ((i * 37) % 11) / 11 * .56); // chaque poil a sa largeur, toujours la même
 
 const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
@@ -73,8 +71,8 @@ const AVIS = n => n >= 17 ? 'Excoffon s’arrêterait là.' : n >= 13 ? 'Presque
 export default {
   lettre: 'X',
   css: `
-.ex{display:grid;grid-template-columns:auto minmax(200px,290px);gap:clamp(16px,3cqw,44px);justify-content:center;align-items:end;height:100cqh}
-.ex-feuille{position:relative;height:min(100cqh,calc((100cqw - 340px)/${FORMAT}));aspect-ratio:${FORMAT};background:${FEUILLE};cursor:crosshair;touch-action:none;box-shadow:0 0 0 1px rgba(0,0,0,.16),0 26px 50px -30px rgba(0,0,0,.6)}
+.ex{display:grid;grid-template-columns:auto minmax(200px,280px);gap:clamp(16px,3cqw,44px);justify-content:center;align-items:end;height:100cqh}
+.ex-feuille{position:relative;width:min(calc(100cqw - 330px),calc(100cqh*${FORMAT}));aspect-ratio:${FORMAT};align-self:center;background:${FEUILLE};cursor:crosshair;touch-action:none;box-shadow:0 0 0 1px rgba(0,0,0,.16),0 26px 50px -30px rgba(0,0,0,.6)}
 .ex-feuille canvas{display:block;width:100%;height:100%}
 .ex-feuille img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:${FEUILLE};pointer-events:none}
 .ex-cote{display:grid;gap:clamp(8px,1.8cqh,14px);align-content:end;padding-bottom:4px;min-height:0}
@@ -85,13 +83,16 @@ export default {
 .ex-note b{font:900 clamp(26px,5cqh,44px)/1 "Sofia Cond",Impact,sans-serif}
 .ex-jauge{height:10px;border:1.5px solid currentColor;border-radius:2px}
 .ex-jauge i{display:block;height:100%;width:0;background:currentColor;transition:width .5s cubic-bezier(.2,.7,.2,1)}
-.ex-essais{display:grid;grid-template-columns:repeat(6,1fr);gap:5px}
+.ex-essais{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.ex-ref{margin:0}
+.ex-ref img{display:block;width:100%;height:auto;box-shadow:0 0 0 1px rgba(255,255,255,.3)}
+.ex-ref figcaption{font:600 12px/1.3 Archivo,sans-serif;margin-top:5px}
 .ex-essais canvas{display:block;width:100%;aspect-ratio:${FORMAT};background:${FEUILLE}}
 .ex-essais canvas.mieux{outline:2px solid currentColor;outline-offset:1px}
 .ex-boutons{display:flex;flex-wrap:wrap;gap:8px}
 .ex-prov{border-left:3px solid currentColor;padding-left:10px}
 @media (prefers-reduced-motion:reduce){.ex-jauge i{transition:none}}
-@media (max-width:760px){.ex{grid-template-columns:1fr;height:auto}.ex-feuille{height:auto;width:min(100%,calc(64svh*${FORMAT}));justify-self:center}}
+@media (max-width:760px){.ex{grid-template-columns:1fr;height:auto}.ex-feuille{width:100%}}
 `,
   monter(zone, ctx) {
     const ref = ctx.artiste.images?.[0];
@@ -99,16 +100,17 @@ export default {
       <div class="ex">
         <div class="ex-feuille"><canvas data-export aria-label="La feuille : dessine ici l’avion d’un seul geste"></canvas></div>
         <div class="ex-cote">
+          ${ref ? `<figure class="ex-ref"><img src="${ctx.racine}img/x/${ref.f}" alt="L’affiche de la Caravelle, Roger Excoffon, 1964"><figcaption>La vraie : Air France, Caravelle, 1964.</figcaption></figure>` : ''}
+          <p class="note"><strong>Pourquoi 450 ?</strong> Excoffon raconte avoir dessiné 450 avions, pendant des semaines, avant d’obtenir ce coup de pinceau qui a l’air improvisé. Combien d’essais te faut-il ?</p>
           <p class="ex-compte" aria-live="polite">Essai 0 <small>/ ${TOTAL}</small></p>
-          <p class="ex-note"><b>–</b><span>Dessine l’avion sur la feuille, sans lever la main.</span></p>
+          <p class="ex-note"><b>–</b><span>Suis le pointillé d’un seul geste, sans lever la main.</span></p>
           <div class="ex-jauge" role="img" aria-label="Ressemblance"><i></i></div>
           <div class="ex-essais" aria-label="Tes essais"></div>
           <div class="ex-boutons">
-            <button type="button" class="bouton plein" data-vraie aria-pressed="false">${ref ? 'Voir la vraie' : 'Voir le modèle'}</button>
+            <button type="button" class="bouton plein" data-vraie aria-pressed="false">${ref ? 'Poser la vraie sur la feuille' : 'Voir le modèle'}</button>
             <button type="button" class="bouton" data-vider>Tout effacer</button>
           </div>
-          <p class="note">Lentement, le pinceau est épais ; vite, il devient fin et sec. Excoffon dit avoir dessiné 450 avions avant de trouver le bon geste.</p>
-          <p class="note ex-prov"${ref ? ' hidden' : ''}>Version provisoire : la note compare ton trait à un modèle d’exercice, en attendant l’image de l’affiche.</p>
+          <p class="note">Lentement, le pinceau est épais ; vite, il devient fin et sec. La note dit à quel point ton trait suit le pointillé.</p>
         </div>
       </div>`;
     const feuille = zone.querySelector('.ex-feuille'), cv = feuille.querySelector('canvas'), x = cv.getContext('2d');
@@ -117,17 +119,17 @@ export default {
 
     function mesurer() { const r = feuille.getBoundingClientRect(); if (!r.width) return; dpr = Math.min(devicePixelRatio || 1, 2); L = r.width; H = r.height; cv.width = Math.round(L * dpr); cv.height = Math.round(H * dpr); peindre(); }
     function guide() {                                        // le modèle en pointillé (provisoire, tant qu'il n'y a pas l'image)
-      x.save(); x.strokeStyle = 'rgba(20,20,20,.5)'; x.lineWidth = Math.max(1.2, L * .004); x.setLineDash([L * .012, L * .016]); x.lineCap = 'round';
+      x.save(); x.strokeStyle = 'rgba(230,243,251,.55)'; x.lineWidth = Math.max(1.2, L * .003); x.setLineDash([L * .008, L * .011]); x.lineCap = 'round';
       x.beginPath(); COURBE.forEach((p, i) => i ? x.lineTo(p.x * L, p.y * L) : x.moveTo(p.x * L, p.y * L)); x.stroke(); x.restore();
     }
     function peindre() {
       if (!L) return;
       x.setTransform(dpr, 0, 0, dpr, 0, 0); x.fillStyle = FEUILLE; x.fillRect(0, 0, L, H);
       const trait = enCours || dernier;
-      if (!trait || (montre && !vraie)) guide();
+      guide();                                                // le tracé à suivre reste toujours visible
       if (!trait) {
-        x.fillStyle = 'rgba(20,20,20,.62)'; x.textAlign = 'center'; x.font = `600 ${Math.max(12, L * .034)}px Archivo, sans-serif`;
-        x.fillText('Dessine l’avion ici, d’un seul geste.', L / 2, H * .9);
+        x.fillStyle = 'rgba(230,243,251,.8)'; x.textAlign = 'center'; x.font = `600 ${Math.max(12, L * .024)}px Archivo, sans-serif`;
+        x.fillText('Dessine l’avion ici, d’un seul geste, en suivant le pointillé.', L / 2, H * .9);
       } else pinceau(x, trait, L, trait === dernier);
     }
     function demander() { if (!raf) raf = requestAnimationFrame(() => { raf = 0; if (vivant) peindre(); }); }
@@ -138,8 +140,8 @@ export default {
       if (a) {
         const d = dist(a, p); if (d < .004) return;
         const v = d / Math.max(1, p.t - a.t), q = borne(v / .0032, 0, 1);            // vitesse, en largeurs de feuille par milliseconde
-        p.w = a.w + ((.072 - .058 * q) - a.w) * .32; p.g = a.g + ((1.75 - 1.2 * q) - a.g) * .4;
-      } else { p.w = .06; p.g = 1.6; }
+        p.w = a.w + ((.05 - .041 * q) - a.w) * .32; p.g = a.g + ((1.75 - 1.2 * q) - a.g) * .4;
+      } else { p.w = .04; p.g = 1.6; }
       enCours.push(p);
     }
     function commencer(e) {
@@ -156,7 +158,7 @@ export default {
       compte.innerHTML = `Essai ${n} <small>/ ${TOTAL}</small>`;
       note.innerHTML = `<b>${s}/20</b><span>${AVIS(s)}${n > 1 ? ` Ton meilleur : ${meilleur}/20.` : ''}</span>`;
       jauge.style.width = `${s * 5}%`;
-      const m = document.createElement('canvas'); m.width = 124; m.height = Math.round(124 / FORMAT); m.title = `Essai ${n} : ${s}/20`;
+      const m = document.createElement('canvas'); m.width = 150; m.height = Math.round(150 / FORMAT); m.title = `Essai ${n} : ${s}/20`;
       const c = m.getContext('2d'); c.fillStyle = FEUILLE; c.fillRect(0, 0, m.width, m.height); pinceau(c, pts, m.width, true);
       if (record) { grille.querySelector('.mieux')?.classList.remove('mieux'); m.className = 'mieux'; }
       grille.prepend(m); while (grille.children.length > 12) grille.lastChild.remove();
@@ -164,7 +166,7 @@ export default {
       demander();
     }
     function basculer(on) {
-      montre = on; bVraie.setAttribute('aria-pressed', on); bVraie.textContent = on ? 'Revenir à mon dessin' : (ref ? 'Voir la vraie' : 'Voir le modèle');
+      montre = on; bVraie.setAttribute('aria-pressed', on); bVraie.textContent = on ? 'Revenir à mon dessin' : (ref ? 'Poser la vraie sur la feuille' : 'Voir le modèle');
       if (vraie) vraie.hidden = !on;
       demander();
     }
@@ -175,11 +177,11 @@ export default {
     bVraie.addEventListener('click', () => basculer(!montre));
     zone.querySelector('[data-vider]').addEventListener('click', () => {
       n = 0; meilleur = -1; dernier = null; grille.innerHTML = ''; jauge.style.width = '0';
-      compte.innerHTML = `Essai 0 <small>/ ${TOTAL}</small>`; note.innerHTML = '<b>–</b><span>Dessine l’avion sur la feuille, sans lever la main.</span>'; demander();
+      compte.innerHTML = `Essai 0 <small>/ ${TOTAL}</small>`; note.innerHTML = '<b>–</b><span>Suis le pointillé d’un seul geste, sans lever la main.</span>'; demander();
     });
     if (ref) {                                                // l'affiche d'Eliott, posée sur la feuille quand on demande à la voir
       vraie = new Image(); vraie.alt = ref.t || 'L’affiche de la Caravelle'; vraie.hidden = true;
-      vraie.onerror = () => { vraie.remove(); vraie = null; zone.querySelector('.ex-prov').hidden = false; };
+      vraie.onerror = () => { vraie.remove(); vraie = null; };
       vraie.src = `${ctx.racine}img/x/${ref.f}`; feuille.append(vraie);
     }
     const ro = new ResizeObserver(mesurer); ro.observe(feuille);

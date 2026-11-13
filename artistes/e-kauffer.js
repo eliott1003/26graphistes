@@ -1,32 +1,37 @@
 // E · Edward McKnight Kauffer — Soaring to Success! Daily Herald – the Early Bird (1918-1919, lithographie, 297,7 × 152,2 cm).
-// L'affiche : un fond jaune très haut, une volée d'oiseaux géométriques en haut, le texte tout en bas.
+// Calé sur l'image fournie par Eliott (img/e/ref.jpg, variante de l'affiche, Cooper Hewitt) : cadre kaki et filet sombre, jaune,
+// volée de huit oiseaux tournés vers la gauche (bec long, œil cerclé de jaune, ailes en longues pointes, traînées vers la droite),
+// diagonale blanche sous la volée, et les trois lignes de texte du bas à leur place.
 // Au passage de la souris, les oiseaux s'envolent, s'écartent et la suivent ; quand elle s'arrête ou sort, ils reviennent se poser en formation.
-// PROVISOIRE : la volée (nombre, place, dessin et sens des oiseaux), le jaune et le lettrage du bas sont faits de mémoire,
-// d'après la description du V&A (fond jaune, volée géométrique, texte en bas). À caler sur l'image de référence : img/e/ref.jpg (à fournir par Eliott).
+// Reste approché : le dessin exact de chaque oiseau (sur l'affiche ils s'imbriquent en damier) et le lettrage de DAILY HERALD (dessiné à la main sur l'original).
 
 const R = 152.2 / 297.7;                 // largeur / hauteur de l'affiche
-const JAUNE = '#f5c21b', NOIR = '#151515', BLANC = '#f6f1e2', GRIS = '#8b959b';
+const JAUNE = '#ffd400', NOIR = '#433f34', BLANC = '#ecece0', GRIS = '#9a8d61';
 const TEXTE = '"Caslon", "Libre Caslon Text", Georgia, serif';
 
-// Un oiseau, tête vers la droite. L'aile du haut en trois facettes ; l'aile du bas est son miroir.
+// Un oiseau, tête vers la droite dans son repère (sur l'affiche il est tourné vers la gauche). Les ailes partent du même côté, vers le haut et l'arrière.
 const AILE = [
-  [[18, -3], [0, -40], [-6, -3]],                      // de l'épaule au coude
-  [[0, -40], [-48, -58], [-22, -30], [-6, -3]],        // la main, rejetée en arrière
-  [[-6, -3], [-22, -30], [-32, -17], [-22, -3]],       // le bord de fuite
+  [[8, 5], [-74, 60], [-12, 5]],          // la grande aile
+  [[-6, 5], [-66, 34], [-26, 5]],         // la seconde, plus basse
+  [[-12, 5], [-40, 24], [-30, 5]],        // le creux entre les deux
 ];
-const CORPS = [[31, 0], [14, -6], [-26, -4], [-26, 4], [14, 6]];
-const QUEUE = [[-23, 0], [-52, -13], [-44, 0], [-52, 13]];
+const TRAINEES = [[[-18, -6], [-118, -9], [-18, 1]], [[-22, 0], [-96, 6], [-22, 6]]];
+const CORPS = [[24, -4], [2, -9], [-30, -2], [-4, 8], [18, 5]];
+const DAMIER = [[2, -9], [-12, -1], [-4, 8], [8, 0]];
+const TETE = [[30, -5], [16, -6], [14, 5], [28, 3]];
+const BEC_H = [[28, -3], [68, 1], [28, 0]], BEC_B = [[28, 0], [68, 1], [28, 3]];
 const PALETTES = [
-  { haut: [BLANC, GRIS, NOIR], bas: [NOIR, BLANC, GRIS], queue: BLANC },
-  { haut: [GRIS, NOIR, BLANC], bas: [BLANC, GRIS, NOIR], queue: GRIS },
-  { haut: [NOIR, BLANC, GRIS], bas: [GRIS, NOIR, BLANC], queue: BLANC },
+  { ailes: [NOIR, BLANC, GRIS], trainees: [GRIS, BLANC], damier: BLANC },
+  { ailes: [NOIR, GRIS, BLANC], trainees: [BLANC, GRIS], damier: BLANC },
+  { ailes: [BLANC, NOIR, GRIS], trainees: [GRIS, BLANC], damier: GRIS },
 ];
-// La formation (en largeurs d'affiche) : place, taille, cap en radians (vers le haut à gauche).
-const FORMATION = [
-  [.30, .21, 1.22, -2.30], [.52, .29, 1.34, -2.20], [.22, .41, 1.00, -2.46], [.70, .37, 1.08, -2.10],
-  [.45, .50, 1.18, -2.30], [.66, .57, .94, -2.20], [.82, .52, .82, -2.02], [.35, .66, .90, -2.40],
+// La formation, relevée sur l'image : place de l'œil (en largeurs d'affiche), taille, cap (vers la gauche, un peu vers le haut).
+const YEUX = [
+  [.288, .215, 1.30, -2.93], [.445, .221, 1.38, -2.95], [.190, .330, .95, -3.02], [.381, .324, 1.12, -2.97],
+  [.669, .381, 1.00, -2.99], [.284, .401, .92, -2.98], [.209, .426, .86, -3.02], [.170, .464, .84, -3.05],
 ];
-const UNITE = .0026;                     // un oiseau de taille 1 fait environ 0,3 largeur d'envergure
+const UNITE = .0034;
+const FORMATION = YEUX.map(([ex, ey, s, r]) => { const k = UNITE * s; return [ex - (Math.cos(r) * 21 - Math.sin(r) * -1) * k, ey - (Math.sin(r) * 21 + Math.cos(r) * -1) * k, s, r]; });
 const PRES = .2, LOIN = .44, REPOS = 1700; // la souris fait fuir en dessous de PRES, attire au-delà de LOIN ; sans mouvement pendant REPOS ms, retour
 
 export default {
@@ -49,7 +54,6 @@ export default {
           <p class="etiquette" aria-live="polite"></p>
           <p class="note">Passe la souris sur la volée : les oiseaux s’envolent, s’écartent et te suivent. Arrête-toi ou sors de l’affiche : ils reviennent se poser.</p>
           <div class="kf-boutons"><button type="button" class="bouton plein" data-envol>Faire s’envoler</button></div>
-          <p class="note kf-prov">Version provisoire : oiseaux et lettrage redessinés de mémoire, à caler sur l’image de l’affiche.</p>
         </div>
       </div>`;
     const affiche = zone.querySelector('.kf-affiche'), cv = affiche.querySelector('canvas'), x = cv.getContext('2d'), info = zone.querySelector('.etiquette');
@@ -64,23 +68,37 @@ export default {
     }
     const poly = (pts, fy, c) => { x.beginPath(); pts.forEach(([px, py], i) => i ? x.lineTo(px, py * fy) : x.moveTo(px, py * fy)); x.closePath(); x.fillStyle = c; x.fill(); };
     function dessiner(o) {
-      const k = L * UNITE * o.s;
-      x.save(); x.translate(o.x * L, o.y * L); x.rotate(o.r); x.scale(k, k);
-      poly(QUEUE, 1, o.pal.queue);
-      AILE.forEach((p, i) => poly(p, -o.f, o.pal.bas[i]));   // aile du bas
-      AILE.forEach((p, i) => poly(p, o.f, o.pal.haut[i]));   // aile du haut
-      poly(CORPS, 1, NOIR);
+      const k = L * UNITE * o.s, haut = Math.cos(o.r) > 0 ? -1 : 1;      // les ailes restent côté ciel, quel que soit le cap
+      x.save(); x.translate(o.x * L, o.y * L); x.rotate(o.r); x.scale(k, k * haut);
+      const calme = Math.max(0, o.f);
+      TRAINEES.forEach((p, i) => { x.globalAlpha = calme; poly(p, 1, o.pal.trainees[i]); }); x.globalAlpha = 1;   // les traînées : seulement posé
+      AILE.forEach((p, i) => poly(p, o.f, o.pal.ailes[i]));
+      poly(CORPS, 1, NOIR); poly(DAMIER, 1, o.pal.damier); poly(TETE, 1, NOIR); poly(BEC_H, 1, BLANC); poly(BEC_B, 1, NOIR);
+      x.beginPath(); x.arc(21, -1, 3.4, 0, 7); x.fillStyle = JAUNE; x.fill(); x.beginPath(); x.arc(21, -1, 1.3, 0, 7); x.fillStyle = NOIR; x.fill();
       x.restore();
+    }
+    function petitesCap(txt, cx, y, corps, largeur) {                    // grandes capitales + petites capitales, comme DAILY HERALD
+      const mots = txt.split(' '), font = t => `700 ${t}px ${TEXTE}`, mes = t => { let w = 0; mots.forEach((m, i) => { x.font = font(t); w += x.measureText(m[0]).width + (i ? t * .32 : 0); x.font = font(t * .8); w += x.measureText(m.slice(1)).width; }); return w; };
+      const t = corps * Math.min(1, largeur / mes(corps)); let px = cx - mes(t) / 2;
+      x.textAlign = 'left';
+      mots.forEach((m, i) => { if (i) px += t * .32; x.font = font(t); x.fillText(m[0], px, y); px += x.measureText(m[0]).width; x.font = font(t * .8); x.fillText(m.slice(1), px, y); px += x.measureText(m.slice(1)).width; });
     }
     function peindre() {
       if (!L) return;
-      x.setTransform(dpr, 0, 0, dpr, 0, 0); x.fillStyle = JAUNE; x.fillRect(0, 0, L, L * HAUT);
-      // le texte du bas, fixe, comme sur l'affiche
-      x.fillStyle = NOIR; x.textAlign = 'center'; x.textBaseline = 'alphabetic';
-      x.font = `700 ${L * .084}px ${TEXTE}`; x.fillText('Soaring to Success !', L * .5, L * 1.672);
-      x.font = `700 ${L * .118}px ${TEXTE}`; x.fillText('DAILY HERALD', L * .5, L * 1.795, L * .88);
-      x.font = `700 ${L * .084}px ${TEXTE}`; x.fillText('– the Early Bird.', L * .5, L * 1.9);
-      oiseaux.forEach(dessiner);
+      const H = L * HAUT, b1 = L * .032, b2 = L * .044, e = L * .015, d0 = L * .472, d1 = L * .686;
+      x.setTransform(dpr, 0, 0, dpr, 0, 0); x.fillStyle = GRIS; x.fillRect(0, 0, L, H);                       // le cadre kaki
+      x.fillStyle = NOIR; x.fillRect(b1, b1, L - 2 * b1, H - 2 * b1);                                         // le filet sombre
+      x.fillStyle = JAUNE; x.fillRect(b2, b2, L - 2 * b2, H - 2 * b2);
+      // sous la diagonale, le jaune est bordé de blanc
+      x.fillStyle = BLANC; x.beginPath(); x.moveTo(b2, d0); x.lineTo(L - b2, d1); x.lineTo(L - b2, H - b2); x.lineTo(b2, H - b2); x.fill();
+      x.fillStyle = JAUNE; x.beginPath(); x.moveTo(b2 + e, d0 + e * 1.25); x.lineTo(L - b2 - e, d1 + e * .95); x.lineTo(L - b2 - e, H - b2 - e); x.lineTo(b2 + e, H - b2 - e); x.fill();
+      // le texte du bas, fixe, à sa place sur l'affiche
+      x.fillStyle = NOIR; x.textBaseline = 'alphabetic';
+      x.font = `400 ${L * .062}px ${TEXTE}`; x.textAlign = 'left'; x.fillText('Soaring to Success !', L * .092, L * 1.626);
+      x.fillStyle = GRIS; petitesCap('DAILY HERALD', L * .4955 - L * .007, L * 1.764 + L * .006, L * .128, L * .707);
+      x.fillStyle = NOIR; petitesCap('DAILY HERALD', L * .4955, L * 1.764, L * .128, L * .707);
+      x.font = `400 ${L * .062}px ${TEXTE}`; x.textAlign = 'right'; x.fillText('— the Early Bird.', L * .911, L * 1.866);
+      x.save(); x.beginPath(); x.rect(b2, b2, L - 2 * b2, H - 2 * b2); x.clip(); oiseaux.forEach(dessiner); x.restore();
     }
     const angle = (a, b, t) => a + Math.atan2(Math.sin(b - a), Math.cos(b - a)) * t;
     function envoler(o, mx, my) {
@@ -114,7 +132,7 @@ export default {
         const v = Math.hypot(o.vx, o.vy), pres = actif ? 1 : Math.min(1, dh / .13);       // près du nid : on reprend la pose
         o.r = angle(o.r, pres > .35 ? Math.atan2(o.vy, o.vx) : o.hr, Math.min(1, dt * (pres > .35 ? 9 : 6)));
         o.ph += dt * (9 + v * 9);
-        o.f += ((1 - pres) + pres * (.28 + .72 * Math.cos(o.ph)) - o.f) * Math.min(1, dt * 18);
+        o.f += ((1 - pres) + pres * (.3 + .7 * Math.cos(o.ph)) - o.f) * Math.min(1, dt * 18);
       });
       const texte = enVol ? `${enVol} oiseau${enVol > 1 ? 'x' : ''} en vol` : 'Huit oiseaux posés, comme sur l’affiche.';
       if (texte !== dit) { dit = texte; info.textContent = texte; }
@@ -138,7 +156,7 @@ export default {
       if (ctx.reduireMouvement) ctx.annoncer?.('Animations réduites : les oiseaux restent posés.');
     });
     const ro = new ResizeObserver(mesurer); ro.observe(affiche);
-    document.fonts.load(`700 40px Caslon`).then(() => peindre()).catch(() => {});
+    Promise.all([document.fonts.load('700 40px Caslon'), document.fonts.load('400 40px Caslon')]).then(() => peindre()).catch(() => {});
     mesurer(); avancer(0, performance.now());
     return () => { vivant = false; cancelAnimationFrame(raf); ro.disconnect(); };
   },
