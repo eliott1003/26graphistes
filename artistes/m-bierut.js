@@ -1,56 +1,73 @@
 // M · Michael Bierut — identité Saks Fifth Avenue (Pentagram, 2007).
-// Le logo (img/m/logo.png, fourni par Eliott le 13/11) est découpé en 64 carrés. Chaque clic les mélange :
-// jamais la même image, toujours la même marque. Un bouton remet le logo d'origine.
-// Retour d'Eliott (13/11) : les carrés ne tournent pas. Pentagram écrit pourtant que les carrés sont
-// « mélangés et tournés » : la case « Tourner aussi les carrés » le montre, elle est décochée par défaut
-// (ROTATION_PAR_DEFAUT ci-dessous).
+// Le logo (img/m/logo.png, fourni par Eliott) est découpé en 64 carrés. Chaque clic les mélange et les fait tourner,
+// comme le système d'origine (Pentagram : « shuffled and rotated »). Un bouton remet le logo.
+// « Mettre sur un sac » : la composition du moment est imprimée sur un sac de la boutique ; les sacs s'alignent
+// dans une vitrine (jusqu'à 4, de tailles différentes, comme les quatre tailles de sacs Saks).
+// Les sacs sont dessinés en code, de façon simple ; ce ne sont pas des photos des vrais sacs.
 
 const LOGO = 'img/m/logo.png';
-const ROTATION_PAR_DEFAUT = false;
-const N = 8, DUREE = 760, DECALAGE = 5, NOIR = '#000';
+const N = 8, DUREE = 760, DECALAGE = 5, NOIR = '#000', MAX_SACS = 4;
+const TAILLES = [1, .8, .64, .9]; // hauteur relative des sacs dans la vitrine
 
 export default {
   lettre: 'M',
   css: `
+.bi-tout{position:relative;height:100cqh}
 .bi{display:grid;grid-template-columns:auto minmax(180px,236px);gap:clamp(16px,3cqw,44px);justify-content:center;align-items:end;height:100cqh}
 .bi-cadre{position:relative;height:min(100cqh,calc(100cqw - 284px));aspect-ratio:1;background:${NOIR};cursor:pointer;touch-action:manipulation;box-shadow:0 0 0 1px rgba(255,255,255,.16)}
 .bi-cadre canvas{display:block;width:100%;height:100%}
 .bi-cote{display:grid;gap:clamp(8px,1.6cqh,14px);align-content:end;padding-bottom:2px}
-.bi-compte{font:400 clamp(30px,6cqh,60px)/1 Bodoni,Didot,serif;margin:0}
+.bi-compte{font:400 clamp(26px,5cqh,48px)/1 Bodoni,Didot,serif;margin:0}
 .bi-cote p{margin:0}
 .bi-boutons{display:flex;flex-wrap:wrap;gap:8px}
-.bi-tourner{display:flex;align-items:center;gap:8px;font:600 13px/1.3 Archivo,sans-serif;cursor:pointer}
-.bi-tourner input{width:18px;height:18px;accent-color:#fff;margin:0}
-.bi-sacs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
-.bi-sacs canvas{width:100%;aspect-ratio:1;display:block;background:${NOIR};cursor:pointer;box-shadow:0 0 0 1px rgba(255,255,255,.16)}
-@media (max-height:640px){.bi-sacs{grid-template-columns:repeat(8,1fr)}}
-@media (max-width:760px){.bi{grid-template-columns:1fr;height:auto}.bi-cadre{height:auto;width:100%}}
+.bi-tout .bi-sac{min-height:50px;font-size:15.5px;width:100%}
+.bi-voir{background:none;border:0;padding:0;color:inherit;font:600 13px/1.3 Archivo,sans-serif;text-decoration:underline;text-underline-offset:3px;cursor:pointer;justify-self:start}
+.bi-voir[hidden]{display:none}
+.bi-vitrine{position:absolute;inset:0;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto;gap:12px;background:#0a0a0a}
+.bi-vitrine[hidden]{display:none}
+.bi-vitrine canvas{display:block;width:100%;height:100%;min-height:0}
+.bi-vitrine-bas{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+.bi-vitrine-bas p{margin:0}
+@media (max-width:760px){.bi-tout{height:auto}.bi{grid-template-columns:1fr;height:auto}.bi-cadre{height:auto;width:100%}.bi-vitrine{position:fixed;z-index:50;padding:16px}}
 `,
   monter(zone, ctx) {
     zone.innerHTML = `
-      <div class="bi">
+      <div class="bi-tout"><div class="bi">
         <div class="bi-cadre" role="button" tabindex="0" aria-label="Mélanger les 64 carrés"><canvas data-export></canvas></div>
         <div class="bi-cote">
           <p class="bi-compte" aria-live="polite">Le logo</p>
-          <p class="note">Clique sur le carré : les 64 morceaux changent de place. Chaque image est un nouveau sac, et c’est toujours Saks.</p>
+          <p class="note">Clique sur le carré : les 64 morceaux se mélangent et tournent. Chaque image est un nouveau sac, et c’est toujours Saks.</p>
           <div class="bi-boutons">
-            <button type="button" class="bouton plein" data-melanger>Mélanger</button>
+            <button type="button" class="bouton" data-melanger>Mélanger</button>
             <button type="button" class="bouton" data-logo>Remettre le logo</button>
           </div>
-          <label class="bi-tourner"><input type="checkbox" data-tourner${ROTATION_PAR_DEFAUT ? ' checked' : ''}> Tourner aussi les carrés</label>
-          <p class="etiquette">Tes derniers sacs (clique pour y revenir)</p>
-          <div class="bi-sacs"></div>
+          <p class="note">Une composition te plaît ?</p>
+          <button type="button" class="bouton plein bi-sac" data-sac>Mettre sur un sac</button>
+          <button type="button" class="bi-voir" data-voir hidden></button>
+        </div></div>
+        <div class="bi-vitrine" hidden>
+          <canvas aria-label="La vitrine des sacs"></canvas>
+          <div class="bi-vitrine-bas">
+            <p class="note">Tes sacs : chacun différent, tous Saks. Les ${MAX_SACS} derniers restent en vitrine.</p>
+            <div class="bi-boutons">
+              <button type="button" class="bouton" data-vider>Vider la vitrine</button>
+              <button type="button" class="bouton plein" data-retour>Retour aux carrés</button>
+            </div>
+          </div>
         </div>
       </div>`;
     const cadre = zone.querySelector('.bi-cadre'), cv = cadre.querySelector('canvas'), x = cv.getContext('2d');
-    const compte = zone.querySelector('.bi-compte'), sacs = zone.querySelector('.bi-sacs'), tourner = zone.querySelector('[data-tourner]');
+    const compte = zone.querySelector('.bi-compte'), voir = zone.querySelector('[data-voir]');
+    const vitrine = zone.querySelector('.bi-vitrine'), vc = vitrine.querySelector('canvas');
     const logo = new Image(); let T = 0, vivant = true, raf = 0, n = 0, pret = false;
-    // état : pour chaque case d'arrivée, quel morceau y est posé et sa rotation en quarts de tour (0 quand on ne tourne pas)
+    // état : pour chaque case d'arrivée, quel morceau y est posé et sa rotation en quarts de tour
     let etat = Array.from({ length: N * N }, (_, i) => ({ m: i, r: 0 })), anim = null;
+    let sacs = []; // { img: canvas carré de la composition, no }
 
     function tailles() {
       const t = Math.round(cadre.getBoundingClientRect().width * Math.min(devicePixelRatio || 1, 2));
-      if (!t || t === T) return; T = t; cv.width = cv.height = T; peindre(1);
+      if (t && t !== T) { T = t; cv.width = cv.height = T; peindre(1); }
+      if (!vitrine.hidden) peindreVitrine();
     }
     function peindre(p) {
       const k = T / N, ks = (logo.naturalWidth || 1) / N; x.fillStyle = NOIR; x.fillRect(0, 0, T, T);
@@ -69,35 +86,107 @@ export default {
         x.restore();
       });
     }
-    function vers(nouvel, sauver = true) {
+    function vers(nouvel) {
       const k = T / N, depuis = new Map();
       etat.forEach((e, i) => depuis.set(e.m, { x: (i % N + .5) * k, y: (Math.floor(i / N) + .5) * k, r: e.r }));
       // la rotation suit le chemin le plus court : pas de tours inutiles
       nouvel.forEach(e => { const d = depuis.get(e.m).r; while (e.r - d > 2) e.r -= 4; while (d - e.r > 2) e.r += 4; });
       etat = nouvel; anim = { depuis, ordre: nouvel.map(() => Math.random() * 64 | 0) };
       cancelAnimationFrame(raf);
-      if (ctx.reduireMouvement) { anim = null; peindre(1); if (sauver) garder(); return; }
+      if (ctx.reduireMouvement) { anim = null; peindre(1); return; }
       const t0 = performance.now(), total = DUREE + DECALAGE * 64;
-      const pas = t => { if (!vivant) return; const p = Math.min(1, (t - t0) / total); peindre(p); if (p < 1) raf = requestAnimationFrame(pas); else { anim = null; peindre(1); if (sauver) garder(); } };
+      const pas = t => { if (!vivant) return; const p = Math.min(1, (t - t0) / total); peindre(p); if (p < 1) raf = requestAnimationFrame(pas); else { anim = null; peindre(1); } };
       raf = requestAnimationFrame(pas);
     }
     function melanger() {
       if (!pret) return;
       const m = [...Array(N * N).keys()];
       for (let i = m.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0; [m[i], m[j]] = [m[j], m[i]]; }
-      vers(m.map(v => ({ m: v, r: tourner.checked ? Math.random() * 4 | 0 : 0 })));
-      n++; compte.textContent = `Sac n° ${n}`;
+      vers(m.map(v => ({ m: v, r: Math.random() * 4 | 0 })));
+      n++; compte.textContent = `Composition n° ${n}`;
     }
-    function remettre() { vers(etat.map((_, i) => ({ m: i, r: 0 })), false); compte.textContent = 'Le logo'; }
-    function garder() {
-      const s = document.createElement('canvas'); s.width = s.height = 160; s.getContext('2d').drawImage(cv, 0, 0, 160, 160);
-      const copie = etat.map(e => ({ ...e })), no = n;
-      s.title = `Sac n° ${no}`; s.setAttribute('role', 'button'); s.tabIndex = 0;
-      const revenir = () => { vers(copie.map(e => ({ ...e })), false); compte.textContent = `Sac n° ${no}`; };
-      s.addEventListener('click', revenir);
-      s.addEventListener('keydown', e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); revenir(); } });
-      sacs.prepend(s); while (sacs.children.length > 8) sacs.lastChild.remove();
+    function remettre() { vers(etat.map((_, i) => ({ m: i, r: 0 }))); compte.textContent = 'Le logo'; }
+
+    /* ---------- le sac ---------- */
+    function composition() {
+      // l'état final (sans l'animation en cours), à 900 px
+      const S = 900, c = document.createElement('canvas'); c.width = c.height = S;
+      const g = c.getContext('2d'), k = S / N, ks = logo.naturalWidth / N;
+      g.fillStyle = NOIR; g.fillRect(0, 0, S, S); g.imageSmoothingQuality = 'high';
+      etat.forEach((e, i) => {
+        g.save(); g.translate((i % N + .5) * k, (Math.floor(i / N) + .5) * k); if (e.r) g.rotate(e.r * Math.PI / 2);
+        g.drawImage(logo, (e.m % N) * ks, Math.floor(e.m / N) * ks, ks, ks, -k / 2, -k / 2, k + .5, k + .5); g.restore();
+      });
+      return c;
     }
+    function anse(g, ax, ay, l, hh) {
+      g.beginPath(); g.moveTo(ax, ay); g.bezierCurveTo(ax - l * .05, ay - hh * 1.25, ax + l * 1.05, ay - hh * 1.25, ax + l, ay); g.stroke();
+    }
+    // un sac posé au sol : face avant (coin bas gauche en x0, base), soufflet à droite, anses en cordon noir
+    function sac(g, img, x0, base, h, no) {
+      const w = h * .82, top = base - h, d = w * .2, dy = d * .38;
+      // ombre portée
+      g.save(); g.filter = `blur(${Math.round(h * .03)}px)`; g.fillStyle = 'rgba(0,0,0,.55)';
+      g.beginPath(); g.ellipse(x0 + w * .55, base, w * .62, h * .035, 0, 0, Math.PI * 2); g.fill(); g.restore();
+      // anses arrière
+      g.lineCap = 'round'; g.lineWidth = Math.max(2, w * .016); g.strokeStyle = '#2a2a2a';
+      anse(g, x0 + w * .3 + d * .6, top - dy * .6, w * .4, h * .3);
+      // soufflet : la même composition, assombrie et inclinée
+      g.save(); g.beginPath(); g.moveTo(x0 + w, top); g.lineTo(x0 + w + d, top - dy); g.lineTo(x0 + w + d, base - dy); g.lineTo(x0 + w, base); g.closePath(); g.clip();
+      g.fillStyle = '#0d0d0d'; g.fillRect(x0 + w, top - dy, d, h + dy);
+      g.globalAlpha = .45; g.transform(1, -dy / d, 0, 1, x0 + w, top);
+      g.drawImage(img, img.width * .78, 0, img.width * .22, img.width, 0, 0, d, h); g.restore();
+      // ouverture du dessus
+      g.fillStyle = '#050505'; g.beginPath(); g.moveTo(x0, top); g.lineTo(x0 + d, top - dy); g.lineTo(x0 + w + d, top - dy); g.lineTo(x0 + w, top); g.closePath(); g.fill();
+      // face avant : la composition recadrée pour remplir la face (le sac est plus haut que large)
+      g.save(); g.beginPath(); g.rect(x0, top, w, h); g.clip();
+      g.drawImage(img, x0 + (w - h) / 2, top, h, h);
+      const lum = g.createLinearGradient(x0, 0, x0 + w, 0); lum.addColorStop(0, 'rgba(255,255,255,.07)'); lum.addColorStop(.5, 'rgba(255,255,255,0)'); lum.addColorStop(1, 'rgba(0,0,0,.18)');
+      g.fillStyle = lum; g.fillRect(x0, top, w, h);
+      const bas = g.createLinearGradient(0, base - h * .12, 0, base); bas.addColorStop(0, 'rgba(0,0,0,0)'); bas.addColorStop(1, 'rgba(0,0,0,.28)');
+      g.fillStyle = bas; g.fillRect(x0, top, w, h);
+      g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(x0, top, w, h * .045); // rabat replié du haut
+      g.restore();
+      g.strokeStyle = 'rgba(255,255,255,.14)'; g.lineWidth = 1; g.strokeRect(x0 + .5, top + .5, w - 1, h - 1);
+      // anses avant + œillets
+      g.strokeStyle = '#111'; g.lineWidth = Math.max(2, w * .018); anse(g, x0 + w * .3, top + h * .03, w * .4, h * .3);
+      g.fillStyle = '#9a9a9a'; [x0 + w * .3, x0 + w * .7].forEach(px => { g.beginPath(); g.arc(px, top + h * .055, Math.max(1.5, w * .011), 0, Math.PI * 2); g.fill(); });
+      // numéro au sol
+      g.fillStyle = 'rgba(0,0,0,.5)'; g.font = `600 ${Math.max(11, Math.round(h * .045))}px Archivo, sans-serif`; g.textAlign = 'left';
+      g.fillText(`n° ${no}`, x0, base + Math.max(18, h * .09));
+    }
+    function peindreVitrine() {
+      const r = vc.getBoundingClientRect(), dpr = Math.min(devicePixelRatio || 1, 2), W = Math.round(r.width * dpr), H = Math.round(r.height * dpr);
+      if (!W || !H) return; vc.width = W; vc.height = H;
+      const g = vc.getContext('2d'), sol = .76;
+      // mur sombre et sol clair de la boutique
+      const mur = g.createLinearGradient(0, 0, 0, H); mur.addColorStop(0, '#1b1b1a'); mur.addColorStop(sol, '#2c2b29'); mur.addColorStop(sol, '#d9d5cd'); mur.addColorStop(1, '#bcb7ad');
+      g.fillStyle = mur; g.fillRect(0, 0, W, H);
+      const spot = g.createRadialGradient(W / 2, 0, 0, W / 2, 0, W * .7); spot.addColorStop(0, 'rgba(255,248,230,.18)'); spot.addColorStop(1, 'rgba(255,248,230,0)');
+      g.fillStyle = spot; g.fillRect(0, 0, W, H * sol);
+      g.fillStyle = 'rgba(255,255,255,.5)'; g.font = `italic 400 ${Math.round(H * .04)}px Bodoni, Didot, serif`; g.textAlign = 'center';
+      g.fillText('Saks Fifth Avenue', W / 2, H * .08);
+      const liste = sacs.slice(-MAX_SACS), base = H * (sol + .06);
+      const hs = liste.map((_, i) => TAILLES[i % TAILLES.length]);
+      // largeur occupée par un sac de hauteur h : face + soufflet + écart
+      const place = h => h * .82 * 1.2 + h * .14;
+      let hmax = H * .58; const total = hs.reduce((s, t) => s + place(t * hmax), 0);
+      if (total > W * .94) hmax *= W * .94 / total;
+      let px = (W - hs.reduce((s, t) => s + place(t * hmax), 0)) / 2 + hmax * .07;
+      liste.forEach((s, i) => { const h = hs[i] * hmax; sac(g, s.img, px, base, h, s.no); px += place(h); });
+    }
+    function mettreSurSac() {
+      if (!pret) return;
+      sacs.push({ img: composition(), no: (sacs.at(-1)?.no || 0) + 1 }); if (sacs.length > MAX_SACS) sacs.shift();
+      ouvrirVitrine();
+    }
+    function ouvrirVitrine() {
+      vitrine.hidden = false; cv.removeAttribute('data-export'); vc.setAttribute('data-export', '');
+      peindreVitrine(); vitrine.querySelector('[data-retour]').focus();
+      voir.hidden = false; voir.textContent = `Voir la vitrine (${sacs.length} sac${sacs.length > 1 ? 's' : ''})`;
+      ctx.annoncer?.(`Sac n° ${sacs.at(-1).no} en vitrine`);
+    }
+    function fermerVitrine() { vitrine.hidden = true; vc.removeAttribute('data-export'); cv.setAttribute('data-export', ''); cadre.focus(); }
 
     logo.onload = () => { pret = true; peindre(1); };
     logo.src = ctx.racine + LOGO;
@@ -105,9 +194,11 @@ export default {
     cadre.addEventListener('keydown', e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); melanger(); } });
     zone.querySelector('[data-melanger]').addEventListener('click', melanger);
     zone.querySelector('[data-logo]').addEventListener('click', remettre);
-    // décocher la case remet tout de suite les carrés droits, sans changer leur place
-    tourner.addEventListener('change', () => { if (!tourner.checked && etat.some(e => e.r % 4)) vers(etat.map(e => ({ m: e.m, r: 0 })), false); });
-    const ro = new ResizeObserver(tailles); ro.observe(cadre);
+    zone.querySelector('[data-sac]').addEventListener('click', mettreSurSac);
+    voir.addEventListener('click', ouvrirVitrine);
+    vitrine.querySelector('[data-retour]').addEventListener('click', fermerVitrine);
+    vitrine.querySelector('[data-vider]').addEventListener('click', () => { sacs = []; voir.hidden = true; fermerVitrine(); });
+    const ro = new ResizeObserver(tailles); ro.observe(cadre); ro.observe(vitrine);
     tailles();
     return () => { vivant = false; cancelAnimationFrame(raf); ro.disconnect(); };
   },
