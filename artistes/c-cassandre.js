@@ -9,7 +9,7 @@
 // À fournir par Eliott : c-ref.jpg (le triptyque en largeur), et si possible les neuf étapes.
 
 const MOT = 'DUBONNET';
-const ETAPES = 9;                        // img/c/etape-0.jpg … etape-8.jpg (images d'Eliott, 1200 × 1600 ; PROVISOIRES le 13/11 à 3 h 40, les finales arrivent)
+const ETAPES = 9;                        // img/c/etape-0.jpg … etape-8.jpg (images finales d'Eliott, reçues le 13/11 à 4 h, recadrées en 1200 × 1600)
 const PANNEAUX = [0, 1 / 3, 2 / 3, 1];   // bords des trois panneaux dans img/c/ref.jpg, en part de la largeur (à caler sur l'image)
 const FAUSSE_LETTRE = 'rien';            // 'rien' : une fausse lettre ne change rien ; 'debut' : elle renvoie au début
 const PAPIER = '#efe2c4', NOIR = '#17130f';
