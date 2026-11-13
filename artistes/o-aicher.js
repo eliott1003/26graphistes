@@ -1,4 +1,5 @@
 // O · Otl Aicher — pictogrammes des Jeux de Munich (1972).
+// Construction reprise de la planche (13/11, demandé par Eliott) : bouts coupés net, angles vifs, tronc en bloc, tête détachée.
 // La méthode d'Aicher : un seul corps (tête, tronc, bras, jambes), posé sur une grille ; chaque membre ne suit que
 // l'horizontale, la verticale ou une diagonale à 45°. Ici : Espace = autre sport, et le bonhomme BOUGE vraiment,
 // ses membres pivotent d'une pose à l'autre autour des épaules, des coudes, des hanches et des genoux.
@@ -8,8 +9,8 @@
 // l'image (img/o/ref.jpg). Couleurs : la gamme de Munich (bleu clair, vert, orange, violet, argent ; ni rouge ni noir).
 
 const U = 16; // la grille : 16 × 16 cases
-const T = { tronc: 3.1, bras: 1.75, avant: 1.75, cuisse: 2.2, jambe: 2.2, tete: .82, cou: .3 }; // longueurs, en cases
-const E = { tronc: 1.3, bras: .62, jambe: .78 }; // épaisseurs
+const T = { tronc: 2.85, bras: 1.7, avant: 1.7, cuisse: 2.25, jambe: 2.25, tete: .78, cou: .45 }; // longueurs, en cases
+const E = { tronc: 1.5, bras: .72, jambe: .84 }; // épaisseurs
 const GAMME = ['#5bb5e5', '#8fc31f', '#f39200', '#7a5aa6', '#1d6fb8', '#009b77', '#a9b4bb'];
 
 // Une pose : h = hanche (x, y) ; t = direction du tronc ; b1, b2 = bras [haut, avant-bras] ; j1, j2 = jambes [cuisse, jambe].
@@ -24,7 +25,7 @@ const SPORTS = [
   { nom: 'Tir à l’arc', h: [7.2, 8.8], t: -90, b1: [0, 0], b2: [180, 0], j1: [45, 90], j2: [135, 90], sol: 13.1, objet: 'arc' },
   { nom: 'Gymnastique', h: [8, 7.2], t: 90, b1: [45, 90], b2: [135, 90], j1: [-45, -45], j2: [-135, -135], sol: 13.45 },
   { nom: 'Plongeon', h: [6.6, 6.2], t: 45, b1: [45, 45], b2: [45, 45], j1: [-135, -135], j2: [-135, -135], objet: 'eau' },
-  { nom: 'Natation', h: [9.4, 11.5], t: 180, b1: [180, 180], b2: [-135, 180], j1: [0, 0], j2: [45, 0], objet: 'eau' },
+  { nom: 'Natation', h: [9.4, 11.3], t: 180, b1: [-135, 180], b2: [45, 0], j1: [0, 0], j2: [45, 0], objet: 'eau' },
 ];
 
 const rad = d => d * Math.PI / 180;
@@ -39,7 +40,7 @@ function squelette(p) {
   const pas = (o, a, l) => [o[0] + Math.cos(rad(a)) * l, o[1] + Math.sin(rad(a)) * l];
   const hanche = p.h, epaule = pas(hanche, p.t, T.tronc), tete = pas(epaule, p.t, T.cou + T.tete);
   const membre = (o, [a1, a2], l1, l2) => { const m = pas(o, a1, l1); return [o, m, pas(m, a2, l2)]; };
-  const ep = pas(hanche, p.t, T.tronc - E.bras * .55), ha = pas(hanche, p.t, E.jambe * .35);
+  const ep = pas(hanche, p.t, T.tronc - E.bras * .55), ha = pas(hanche, p.t, E.jambe * .62);
   return { hanche, epaule, tete, b1: membre(ep, p.b1, T.bras, T.avant), b2: membre(ep, p.b2, T.bras, T.avant), j1: membre(ha, p.j1, T.cuisse, T.jambe), j2: membre(ha, p.j2, T.cuisse, T.jambe) };
 }
 
@@ -109,8 +110,9 @@ export default {
       const sol = mel(de.sol ?? 0, vers.sol ?? 0, k), aSol = mel(de.sol ? 1 : 0, vers.sol ? 1 : 0, k);
       if (aSol > 0) { x.globalAlpha = aSol; x.lineCap = 'butt'; trait([[1.5, sol], [14.5, sol]], .26); x.globalAlpha = 1; }
       objet(objetDe, squelette(de), 1 - Math.min(1, k * 3)); objet(vers.objet, s, Math.max(0, k * 3 - 2));
-      // le corps : jambes, tronc, bras, tête
-      x.lineCap = 'round'; x.lineJoin = 'round';
+      // le corps, à la manière d'Aicher : membres de largeur constante coupés net, coudes et genoux en angle vif,
+      // tronc en bloc, tête détachée du corps par un vide
+      x.lineCap = 'butt'; x.lineJoin = 'miter'; x.miterLimit = 3;
       trait(s.j2, E.jambe); trait(s.j1, E.jambe);
       trait([s.hanche, s.epaule], E.tronc);
       trait(s.b2, E.bras); trait(s.b1, E.bras);
