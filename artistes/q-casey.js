@@ -4,20 +4,22 @@
 // c'est une spirale logarithmique, tracée ici par le calcul.
 // À la dernière loge, l'atelier montre l'affiche de Casey (img/q/ref.jpg) quand elle est fournie.
 //
+// Calé le 13/11 sur l'affiche fournie par Eliott (img/q/ref.jpg) : format, couleurs, place et sens du nautile, pente de l'eau, titre.
 // L'affiche est protégée (Jacqueline Casey est morte en 1992) : elle n'est pas redessinée en code. Le nautile est une construction géométrique,
 // pas une copie de son dessin ; la fidélité passe par l'image d'Eliott, montrée à côté et à la fin.
-// PROVISOIRE tant que img/q/ref.jpg manque (à déclarer dans labo/donnees.js : images: [{ f: 'ref.jpg', t: '…' }]) :
-//   format de la feuille, bleu, hauteur finale de la mer, sens et position du nautile sont à caler sur l'image ; la dernière loge ne retombe pas encore sur l'affiche.
 
 const LOGES = 30, DEPART = 6;          // nombre de loges à la fin, au départ
 const CROISSANCE = 3;                  // le rayon triple à chaque tour
 const PAR_TOUR = 13;                   // loges par tour
 const CORPS = .32;                     // la dernière loge, ouverte (celle où vit l'animal), en part de tour
-const OUVERTURE = -2.05;               // direction de l'ouverture à la fin, en radians (0 = vers la droite, négatif = vers le haut)
-const FORMAT = .7;                     // largeur / hauteur de la feuille, tant que l'affiche n'est pas là
+const OUVERTURE = 3.0;                 // direction de l'ouverture à la fin, en radians (π = vers la gauche, comme sur l'affiche)
+const FORMAT = .75;                    // largeur / hauteur de l'affiche (img/q/ref.jpg : 768 × 1024)
+const PLACE = { x: .49, y: .68, l: .81 }; // la coquille finie sur l'affiche : centre et largeur, en part de la feuille
+const PENTE = -.17;                    // la surface de l'eau monte vers la droite
 const RECUL = .6;                      // 0 : échelle fixe (le nautile part minuscule) ; 1 : il remplit toujours la feuille ; entre les deux, on recule à mesure qu'il grandit
-const MER = [.90, .47];                // hauteur de la surface de l'eau, de la première à la dernière loge (0 = haut de la feuille)
-const PAPIER = '#f4f1e7', BLEU = '#0d5fa8', JAUNE = '#ffd23f';
+const MER = [.92, .39];                // hauteur moyenne de la surface de l'eau, de la première à la dernière loge (0 = haut de la feuille)
+// couleurs relevées sur l'affiche : papier, eau claire en surface, eau plus soutenue en bas, coquille bleu nuit vue aux rayons X
+const PAPIER = '#f0f0f2', EAU_HAUT = '#a5d1fe', EAU_BAS = '#6ca3fd', NUIT = '#2b4361', BLEU = NUIT;
 const TAU = Math.PI * 2, PAS = TAU / PAR_TOUR;
 
 const rayon = th => Math.pow(CROISSANCE, th / TAU);               // la spirale : r = 3^(tours)
@@ -72,10 +74,10 @@ export default {
     function coquille(encre, chair, derniere) {
       const thOuv = t * PAS + CORPS * TAU, paroi = .05, pas = .03;
       const taille = rayon(thOuv) / R_FIN, tourne = thOuv - TH_FIN, co = Math.cos(tourne), si = Math.sin(tourne);
-      const k = L * .80 / (BOITE.x1 - BOITE.x0) * Math.pow(taille, -RECUL);
+      const k = L * PLACE.l / (BOITE.x1 - BOITE.x0) * Math.pow(taille, -RECUL);
       // la coquille reste centrée : son milieu tourne et grandit avec elle
       const mx = (BOITE.x0 + BOITE.x1) / 2 * taille, my = (BOITE.y0 + BOITE.y1) / 2 * taille;
-      const ox = L * .5 - (mx * co - my * si) * k, oy = H * .43 - (mx * si + my * co) * k;
+      const ox = L * PLACE.x - (mx * co - my * si) * k, oy = H * PLACE.y - (mx * si + my * co) * k;
       const P = (th, r) => { const [a, b] = point(th, r); return [ox + a * k, oy + b * k]; };
       const arc = (a, b, f, premier) => { const nb = Math.max(2, Math.ceil(Math.abs(b - a) / pas)); for (let i = premier ? 0 : 1; i <= nb; i++) { const th = a + (b - a) * i / nb, p = P(th, f(th)); if (i === 0) x.moveTo(p[0], p[1]); else x.lineTo(p[0], p[1]); } };
       const cloison = (th, versLeCentre) => {            // bombée vers l'arrière, comme dans la coquille
@@ -103,11 +105,26 @@ export default {
     function dessiner() {
       if (!L) return;
       x.setTransform(dpr, 0, 0, dpr, 0, 0);
-      const part = (t - DEPART) / (LOGES - DEPART), niveau = H * (MER[0] + (MER[1] - MER[0]) * part), houle = L * .03, phase = t * .9;
-      const vague = () => { for (let i = 0; i <= 60; i++) { const px = L * i / 60; x.lineTo(px, niveau + houle * Math.sin(px / L * TAU * 1.15 + phase)); } };
+      const part = (t - DEPART) / (LOGES - DEPART), niveau = H * (MER[0] + (MER[1] - MER[0]) * part), houle = L * .018, phase = t * .9;
+      const surface = px => niveau + PENTE * H * (px / L - .5) + houle * Math.sin(px / L * TAU * 1.6 + phase) + houle * .5 * Math.sin(px / L * TAU * 4.3 - phase * 1.7);
+      const vague = () => { for (let i = 0; i <= 80; i++) { const px = L * i / 80; x.lineTo(px, surface(px)); } };
       x.fillStyle = PAPIER; x.fillRect(0, 0, L, H);
-      coquille(BLEU, '#ffffff', JAUNE);                                                                                                               // hors de l'eau : bleu sur papier
-      x.save(); x.beginPath(); x.moveTo(0, H); vague(); x.lineTo(L, H); x.closePath(); x.clip(); x.fillStyle = BLEU; x.fillRect(0, 0, L, H); coquille('#ffffff', '#1f74bd', JAUNE); x.restore(); // sous l'eau : blanc sur bleu
+      coquille(NUIT, '#ffffff', 'rgba(43,67,97,.35)');                                                       // hors de l'eau : bleu nuit sur papier
+      x.save(); x.beginPath(); x.moveTo(0, H); vague(); x.lineTo(L, H); x.closePath(); x.clip();
+      const g = x.createLinearGradient(0, Math.min(surface(0), surface(L)), 0, H); g.addColorStop(0, EAU_HAUT); g.addColorStop(1, EAU_BAS);
+      x.fillStyle = g; x.fillRect(0, 0, L, H);
+      coquille('rgba(36,56,82,.92)', 'rgba(52,78,110,.42)', 'rgba(30,46,68,.55)'); x.restore();            // sous l'eau : la coquille aux rayons X
+      textes();
+    }
+    /* les textes de l'affiche, en haut sur le papier : le titre, et les colonnes de texte courant en lignes grises (non lisibles) */
+    function textes() {
+      x.fillStyle = '#1d1d1f'; x.textBaseline = 'alphabetic';
+      const c = L * .0225; x.font = `400 ${c}px "Helvetica Neue", Helvetica, Arial, Archivo, sans-serif`;
+      ['Ocean Engineering', 'at the', 'Massachusetts Institute', 'of Technology'].forEach((l, i) => x.fillText(l, L * .082, H * .046 + i * c * 1.05));
+      x.fillStyle = 'rgba(40,40,44,.3)';
+      const lig = H * .0108, ep = Math.max(.6, H * .0034);
+      [[.325, .035, 6], [.325, .097, 2], [.325, .118, 1], [.325, .127, 8], [.533, .035, 11], [.533, .152, 7], [.533, .233, 7], [.723, .035, 3], [.723, .072, 1], [.723, .081, 5], [.723, .143, 2]]
+        .forEach(([cx, cy, nb], j) => { for (let i = 0; i < nb; i++) { const w = L * (i === nb - 1 && nb > 1 ? .07 + (j % 3) * .03 : .155 - ((i * 7 + j) % 4) * .006); x.fillRect(L * cx, H * cy + i * lig, w, ep); } });
     }
     function animer() {
       raf = 0; if (!vivant) return;
