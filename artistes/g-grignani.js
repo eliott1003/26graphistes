@@ -1,26 +1,39 @@
 // G · Franco Grignani — trois façons de refaire son geste, chacune d'après une référence fournie par Eliott (img/g/) :
-//  · Ruban  : Today's Italian Publicity and Graphic Design (affiche, Londres, 1967). Un ruban rayé suit la souris ou l'index,
-//             tourne en vraies courbes (rayon minimal, la tête se dirige comme un volant) et passe sur lui-même. Fond blanc, rayé ou noir.
-//  · Onde   : couverture de Linea grafica n° 6 (1965). Des rayures se tordent en tourbillon autour de la souris ou de l'index.
-//  · Éventail : annonce Alfieri & Lacroix. Des carrés noirs se déploient le long du tracé.
-// Les œuvres ne sont pas redessinées ici (protégées) : la référence de chaque mode est montrée à côté de la feuille.
-// Webcam : l'index dirige, pincer pouce et index pose (ou trace, pour l'éventail). Si la caméra ou le modèle manquent, la souris reste.
-// Le modèle de suivi des mains se charge chez Google au premier clic : à vérifier par Eliott sur son ordinateur.
+//  · Éventail : annonce Alfieri & Lacroix. Des carrés noirs se déploient le long du tracé. (variante ouverte au départ)
+//  · Onde     : couverture de Linea grafica n° 6 (1965). Des rayures se tordent en tourbillon autour de la souris ou de l'index ;
+//               à la webcam, plus la main est ouverte, plus le tourbillon est large.
+//  · Ruban    : Today's Italian Publicity and Graphic Design (affiche, Londres, 1967). Un ruban rayé blanc sur fond noir suit la souris
+//               ou l'index, tourne en vraies courbes (rayon minimal, la tête se dirige comme un volant) et passe sur lui-même.
+// Les œuvres ne sont pas redessinées ici (protégées) : la référence de chaque variante est montrée à côté de la feuille.
+// Webcam : l'index dirige, pincer pouce et index pose (ou trace, pour l'éventail) ; deux mains face à la caméra pendant une seconde effacent tout.
+// Si la caméra ou le modèle manquent, la souris reste. Le modèle de suivi des mains se charge chez Google au premier clic.
+// Valeurs : dans REG ci-dessous. Pour les choisir, ajouter ?reglages à l'adresse : un panneau de curseurs apparaît, avec « Copier les réglages ».
 
 const NOIR = '#0c0c0c', BLANC = '#fbfaf6', PAPIER = '#e8e7e3';
-const PAS = .008, BANDES = 13;          // pas de la tête du ruban (largeurs de feuille) ; 7 rayures noires, 6 blanches
+const PAS = .008, BANDES = 13;          // pas de la tête (largeurs de feuille) ; 7 rayures blanches, 6 noires dans le ruban
 const URL_MAINS = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
+const REG = {                             // valeurs figées (à remplacer par celles qu'Eliott choisit dans ?reglages)
+  eventail: { taille: .15, ecart: .1 },
+  onde: { petit: .1, grand: .42, souris: .26, torsion: 2.4 },
+  ruban: { largeur: .27, longueur: 2.6 },
+};
+const CURSEURS = {
+  eventail: [['taille', 'Taille des carrés', .05, .3, .005], ['ecart', 'Écart entre les carrés', .04, .3, .005]],
+  onde: [['petit', 'Tourbillon, main fermée', .03, .4, .005], ['grand', 'Tourbillon, main ouverte', .1, .9, .005], ['souris', 'Tourbillon à la souris', .05, .6, .005], ['torsion', 'Torsion', -4, 4, .05]],
+  ruban: [['largeur', 'Largeur du ruban', .08, .5, .005], ['longueur', 'Longueur du ruban', .6, 6, .05]],
+};
 const MODES = {
   eventail: { r: 2323 / 1599, img: 4, nom: 'Éventail',
     note: 'Comme sur l’annonce Alfieri & Lacroix : maintiens le clic et trace, les carrés se déploient en éventail.',
-    s1: ['Taille des carrés', .05, .3, .005, .15], s2: ['Écart entre les carrés', .04, .3, .005, .1] },
+    main: 'L’index dirige ; pince pouce et index pour tracer.' },
   onde: { r: 1440 / 1127, img: 3, nom: 'Onde',
     note: 'Comme sur Linea grafica (1965) : les rayures se tordent autour de ta souris. Clique pour fixer un tourbillon.',
-    s1: ['Taille du tourbillon', .08, .5, .005, .26], s2: ['Torsion', -4, 4, .05, 2.4] },
+    main: 'L’index dirige ; ouvre la main pour élargir le tourbillon, pince pour le fixer.' },
   ruban: { r: 1395 / 2000, img: 0, nom: 'Ruban',
     note: 'Comme sur l’affiche de 1967 : un ruban rayé suit ta souris, se courbe et passe sur lui-même. Clique pour le poser, puis continue.',
-    s1: ['Largeur du ruban', .08, .5, .005, .27], s2: ['Longueur du ruban', .6, 6, .05, 2.6] },
+    main: 'L’index dirige ; pince pouce et index pour poser le ruban.' },
 };
+const EFFACER_MS = 1000;                  // deux mains visibles pendant ce temps : tout s'efface
 const borne = (v, a, b) => Math.min(b, Math.max(a, v));
 
 /* La tête avance par petits pas et tourne au plus d'un certain angle par pas : les courbes sont de vrais arcs, jamais plus serrés que rmin. */
@@ -40,10 +53,10 @@ function parcours(t, points, rmin, pas) {                             // pour le
   points.forEach(p => { for (let i = 0; i < 400; i++) if (!diriger(t, p, PAS * 4, rmin, pas) || Math.hypot(p.x - t.x, p.y - t.y) < .05) break; });
 }
 
-/* ───────── Ruban ───────── */
-function ruban(c, R, k, fond) {
+/* ───────── Ruban : blanc sur fond noir ───────── */
+function ruban(c, R, k) {
   const P = R.pts, n = P.length; if (n < 3) return;
-  const base = fond === 'noir' ? NOIR : BLANC, raie = fond === 'noir' ? BLANC : NOIR, N = [];
+  const N = [];
   for (let i = 0; i < n; i++) { const a = P[Math.max(0, i - 1)], b = P[Math.min(n - 1, i + 1)], d = Math.hypot(b.x - a.x, b.y - a.y) || 1; N.push([-(b.y - a.y) / d, (b.x - a.x) / d]); }
   const bande = (i0, i1, o0, o1, coul) => {
     c.beginPath();
@@ -52,27 +65,19 @@ function ruban(c, R, k, fond) {
     c.closePath(); c.fillStyle = coul; c.fill();
   };
   // par tronçons dessinés l'un après l'autre : chaque tronçon est une forme continue (pas de facettes),
-  // et ce qui vient après passe par-dessus ce qui vient avant quand le ruban se croise
+  // et ce qui vient après passe par-dessus ce qui vient avant quand le ruban se croise.
+  // Le fond du tronçon commence un point en arrière, les rayures deux : chaque bord se pose sur du déjà peint, sans fente.
   const C = 8;
   for (let s = 0; s < n - 1; s += C) {
-    // le fond du tronçon commence un point en arrière, les rayures deux : chaque bord se pose sur du déjà peint, sans fente
     const j0 = Math.max(0, s - 1), i0 = Math.max(0, s - 2), i1 = Math.min(n - 1, s + C);
-    if (fond === 'raye') bande(j0, i1, -.64, .64, BLANC);               // liseré blanc pour détacher le ruban du fond rayé
-    bande(j0, i1, -.5, .5, base);
-    for (let b = 0; b < BANDES; b += 2) bande(i0, i1, b / BANDES - .5, (b + 1) / BANDES - .5, raie);
+    bande(j0, i1, -.5, .5, NOIR);
+    for (let b = 0; b < BANDES; b += 2) bande(i0, i1, b / BANDES - .5, (b + 1) / BANDES - .5, BLANC);
   }
 }
 function rubanDepart(H) {
   const t = { x: .86, y: .04, dir: 2.5 }, pts = [{ x: t.x, y: t.y }];
-  parcours(t, [{ x: .22, y: .3 }, { x: .8, y: .55 }, { x: .3, y: .9 }, { x: .78, y: 1.15 }, { x: .4, y: H + .1 }], .27 * .62, p => pts.push({ x: p.x, y: p.y }));
-  return { pts, larg: .27, t };
-}
-function fondRaye(c, k, H, larg) {
-  const p = larg / BANDES * 2 * k;                                      // même pas que les rayures du ruban
-  c.fillStyle = BLANC; c.fillRect(0, 0, k, k * H);
-  c.save(); c.translate(k / 2, k * H / 2); c.rotate(-Math.PI / 3); c.fillStyle = NOIR;
-  const D = k * (1 + H); for (let x = -D; x < D; x += p) c.fillRect(x, -D, p / 2, 2 * D);
-  c.restore();
+  parcours(t, [{ x: .22, y: .3 }, { x: .8, y: .55 }, { x: .3, y: .9 }, { x: .78, y: 1.15 }, { x: .4, y: H + .1 }], REG.ruban.largeur * .62, p => pts.push({ x: p.x, y: p.y }));
+  return { pts, larg: REG.ruban.largeur, t };
 }
 
 /* ───────── Onde ───────── */
@@ -107,24 +112,26 @@ export default {
 .gr{display:grid;grid-template-columns:auto minmax(200px,270px);gap:clamp(16px,3cqw,40px);justify-content:center;align-items:center;height:100cqh}
 .gr-affiche{position:relative;width:min(calc(100cqw - 320px),calc(100cqh*var(--gr-r)));aspect-ratio:var(--gr-r);cursor:crosshair;touch-action:none;box-shadow:0 0 0 1px rgba(255,255,255,.28),0 26px 50px -30px rgba(0,0,0,.8)}
 .gr-affiche canvas{display:block;width:100%;height:100%}
-.gr-cote{display:grid;gap:clamp(6px,1.4cqh,12px);align-content:center;min-height:0}
+.gr-cote{display:grid;gap:clamp(6px,1.4cqh,12px);align-content:center;min-height:0;max-height:100cqh;overflow:auto}
 .gr-cote p{margin:0}
 .gr [hidden]{display:none!important}
 .gr-modes{display:flex;gap:6px}
 .gr-modes .bouton{flex:1;padding:6px 8px;min-height:38px}
 .gr-ref{display:flex;gap:8px;align-items:flex-end}
-.gr-ref img{height:clamp(64px,17cqh,150px);width:auto;max-width:100%;display:block;box-shadow:0 0 0 1px rgba(255,255,255,.3);cursor:zoom-in}
-.gr-ref video{height:clamp(56px,12cqh,100px);width:auto;transform:scaleX(-1);box-shadow:0 0 0 1px rgba(255,255,255,.3)}
-.gr-reglage{display:grid;gap:3px;font:600 13px/1.3 Archivo,sans-serif}
-.gr-reglage input{accent-color:#fff;width:100%}
-.gr-reglage select{font:600 13px/1.2 Archivo,sans-serif;color:inherit;background:transparent;border:1.5px solid currentColor;border-radius:4px;padding:6px 8px}
-.gr-reglage select option{color:#111}
+.gr-ref img{height:clamp(64px,19cqh,170px);width:auto;max-width:100%;display:block;box-shadow:0 0 0 1px rgba(255,255,255,.3);cursor:zoom-in}
+.gr-ref video{height:clamp(56px,13cqh,110px);width:auto;transform:scaleX(-1);box-shadow:0 0 0 1px rgba(255,255,255,.3)}
 .gr-boutons{display:flex;flex-wrap:wrap;gap:6px}
 .gr-boutons .bouton{padding:6px 12px;min-height:38px}
-@media (max-width:760px){.gr{grid-template-columns:1fr;height:auto}.gr-affiche{width:100%}}
+.gr-reg{display:grid;gap:6px;padding:10px;border:1.5px dashed currentColor;border-radius:6px;font:500 12px/1.3 "DM Mono",ui-monospace,monospace}
+.gr-reg label{display:grid;grid-template-columns:1fr auto;gap:2px 8px}
+.gr-reg input{grid-column:1/-1;accent-color:#fff;width:100%}
+.gr-reg button{justify-self:start}
+@media (max-width:760px){.gr{grid-template-columns:1fr;height:auto}.gr-affiche{width:100%}.gr-cote{max-height:none}}
 `,
   monter(zone, ctx) {
     const IM = ctx.artiste.images || [], R = ctx.reduireMouvement;
+    const chantier = new URLSearchParams(location.search).has('reglages');
+    const V = JSON.parse(JSON.stringify(REG));                          // valeurs en cours (modifiables seulement dans ?reglages)
     zone.innerHTML = `
       <div class="gr">
         <div class="gr-affiche"><canvas data-export aria-label="La feuille de l’atelier Grignani"></canvas></div>
@@ -133,30 +140,27 @@ export default {
           <div class="gr-ref"><img alt=""><video muted playsinline hidden></video></div>
           <p class="etiquette" aria-live="polite"></p>
           <p class="note" data-note></p>
-          <label class="gr-reglage"><span data-l1></span><input data-v1 type="range"></label>
-          <label class="gr-reglage"><span data-l2></span><input data-v2 type="range"></label>
-          <label class="gr-reglage" data-fond>Fond<select><option value="blanc">Blanc, comme l’affiche de 1967</option><option value="raye">Rayé</option><option value="noir">Noir, ruban blanc</option></select></label>
           <div class="gr-boutons">
             <button type="button" class="bouton plein" data-main>Diriger avec la main</button>
             <button type="button" class="bouton" data-annuler>Retirer le dernier</button>
             <button type="button" class="bouton" data-vider>Tout effacer</button>
           </div>
+          <div class="gr-reg" ${chantier ? '' : 'hidden'}></div>
         </div>
       </div>`;
     const $ = s => zone.querySelector(s);
     const affiche = $('.gr-affiche'), cv = affiche.querySelector('canvas'), x = cv.getContext('2d'), fond = document.createElement('canvas');
-    const info = $('.etiquette'), v1 = $('[data-v1]'), v2 = $('[data-v2]'), bMain = $('[data-main]'), video = $('video'), refImg = $('.gr-ref img'), selFond = $('[data-fond] select');
-    let mode = 'ruban', L = 0, dpr = 1, vivant = true, raf = 0, sale = true, cible = null;
+    const info = $('.etiquette'), bMain = $('[data-main]'), video = $('video'), refImg = $('.gr-ref img'), panneau = $('.gr-reg');
+    let mode = 'eventail', L = 0, dpr = 1, vivant = true, raf = 0, sale = true, cible = null;
     const H = () => 1 / MODES[mode].r;
-    const vals = Object.fromEntries(Object.entries(MODES).map(([m, d]) => [m, [d.s1[4], d.s2[4]]]));
     const E = {
-      ruban: { poses: [], libre: rubanDepart(1 / MODES.ruban.r), fond: 'blanc' },
+      ruban: { poses: [], libre: rubanDepart(1 / MODES.ruban.r) },
       onde: { centres: [{ x: .14, y: .5, s: .34, t: 2.8 }], vif: null },
       eventail: { chaines: [], tete: null, trace: false, acc: 0 },
     };
     { // l'éventail de départ, pour que la feuille ne soit jamais vide
-      const s = .15, t = { x: .1, y: .52, dir: -.35 }, ch = []; let acc = 0;
-      parcours(t, [{ x: .34, y: .22 }, { x: .5, y: .5 }, { x: .58, y: .2 }, { x: .82, y: .3 }, { x: .9, y: .6 }], s * .4, p => { acc += PAS; if (acc >= s * .1) { acc = 0; ch.push({ x: p.x, y: p.y, a: p.dir, s }); } });
+      const s = V.eventail.taille, t = { x: .1, y: .52, dir: -.35 }, ch = []; let acc = 0;
+      parcours(t, [{ x: .34, y: .22 }, { x: .5, y: .5 }, { x: .58, y: .2 }, { x: .82, y: .3 }, { x: .9, y: .6 }], s * .4, p => { acc += PAS; if (acc >= s * V.eventail.ecart) { acc = 0; ch.push({ x: p.x, y: p.y, a: p.dir, s }); } });
       E.eventail.chaines.push(ch); E.eventail.tete = t;
     }
 
@@ -169,13 +173,8 @@ export default {
     }
     function refaire() {
       const f = fond.getContext('2d'); f.setTransform(dpr, 0, 0, dpr, 0, 0);
-      if (mode === 'ruban') {
-        const S = E.ruban;
-        if (S.fond === 'raye') fondRaye(f, L, H(), S.libre.larg); else { f.fillStyle = S.fond === 'noir' ? NOIR : BLANC; f.fillRect(0, 0, L, L * H()); }
-        S.poses.forEach(p => ruban(f, p, L, S.fond));
-      } else if (mode === 'eventail') {
-        f.fillStyle = PAPIER; f.fillRect(0, 0, L, L * H()); E.eventail.chaines.forEach(ch => ch.forEach(q => carre(f, q, L)));
-      }
+      if (mode === 'ruban') { f.fillStyle = NOIR; f.fillRect(0, 0, L, L * H()); E.ruban.poses.forEach(p => ruban(f, p, L)); }
+      else if (mode === 'eventail') { f.fillStyle = PAPIER; f.fillRect(0, 0, L, L * H()); E.eventail.chaines.forEach(ch => ch.forEach(q => carre(f, q, L))); }
       sale = true;
     }
     function peindre() {
@@ -184,14 +183,21 @@ export default {
       if (mode === 'onde') { x.setTransform(dpr, 0, 0, dpr, 0, 0); const O = E.onde; onde(x, O.vif ? [...O.centres, O.vif] : O.centres, L, H()); }
       else {
         x.drawImage(fond, 0, 0); x.setTransform(dpr, 0, 0, dpr, 0, 0);
-        if (mode === 'ruban') ruban(x, E.ruban.libre, L, E.ruban.fond);
+        if (mode === 'ruban') ruban(x, E.ruban.libre, L);
         else if (!E.eventail.trace && cible) {                            // le carré fantôme, avant de tracer
-          const t = E.eventail.tete; x.save(); x.globalAlpha = .35; carre(x, { x: t.x, y: t.y, a: t.dir, s: vals.eventail[0] }, L); x.restore();
+          const t = E.eventail.tete; x.save(); x.globalAlpha = .35; carre(x, { x: t.x, y: t.y, a: t.dir, s: V.eventail.taille }, L); x.restore();
         }
       }
-      if (main.modele && main.pos) {                                       // où est l'index
+      const rouge = '#ff3b30';
+      if (main.modele && main.pos && !main.deux) {                         // où est l'index
         x.beginPath(); x.arc(main.pos.x * L, main.pos.y * L, main.pince ? 9 : 13, 0, 7);
-        x.lineWidth = 3; x.strokeStyle = '#ff3b30'; x.stroke(); if (main.pince) { x.fillStyle = '#ff3b30'; x.fill(); }
+        x.lineWidth = 3; x.strokeStyle = rouge; x.stroke(); if (main.pince) { x.fillStyle = rouge; x.fill(); }
+      }
+      if (main.deux) {                                                     // deux mains : l'anneau se remplit, puis tout s'efface
+        const p = borne((performance.now() - main.deux) / EFFACER_MS, 0, 1), cx = L / 2, cy = L * H() / 2, r = L * .08;
+        x.beginPath(); x.arc(cx, cy, r, 0, 7); x.fillStyle = 'rgba(12,12,12,.55)'; x.fill();
+        x.beginPath(); x.arc(cx, cy, r * .82, -Math.PI / 2, -Math.PI / 2 + p * Math.PI * 2); x.lineWidth = r * .16; x.strokeStyle = rouge; x.stroke();
+        x.fillStyle = '#fff'; x.font = `600 ${Math.max(11, r * .28)}px Archivo, sans-serif`; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(p < 1 ? 'Effacer' : 'Effacé', cx, cy);
       }
     }
 
@@ -199,64 +205,91 @@ export default {
     function avancer() {
       if (!cible) return false;
       if (mode === 'ruban') {
-        const S = E.ruban.libre, t = S.t, max = +vals.ruban[1];
+        const S = E.ruban.libre, t = S.t, max = V.ruban.longueur;
         const bouge = diriger(t, cible, vitesse(t, cible, R), Math.max(.04, S.larg * .62), p => S.pts.push({ x: p.x, y: p.y }));
         if (bouge) { let long = 0; for (let i = S.pts.length - 1; i > 0; i--) { long += Math.hypot(S.pts[i].x - S.pts[i - 1].x, S.pts[i].y - S.pts[i - 1].y); if (long > max) { S.pts.splice(0, i); break; } } }
         return bouge;
       }
       if (mode === 'onde') {
-        const O = E.onde, [s, t] = vals.onde;
-        if (!O.vif) O.vif = { x: cible.x, y: cible.y, s: +s, t: 0 };
-        const v = O.vif, q = R ? 1 : .18, avant = v.x + v.y + v.t;
-        v.x += (cible.x - v.x) * q; v.y += (cible.y - v.y) * q; v.s = +s; v.t += (+t - v.t) * q;
-        return Math.abs(v.x + v.y + v.t - avant) > 1e-4;
+        const O = E.onde, W = V.onde;
+        const s = main.modele && main.vu ? W.petit + (W.grand - W.petit) * main.ouverture : W.souris;   // à la main : la taille suit l'ouverture
+        if (!O.vif) O.vif = { x: cible.x, y: cible.y, s, t: 0 };
+        const v = O.vif, q = R ? 1 : .18, avant = v.x + v.y + v.t + v.s;
+        v.x += (cible.x - v.x) * q; v.y += (cible.y - v.y) * q; v.s += (s - v.s) * q; v.t += (W.torsion - v.t) * q;
+        return Math.abs(v.x + v.y + v.t + v.s - avant) > 1e-4;
       }
-      const V = E.eventail, [s, ecart] = vals.eventail, f = fond.getContext('2d');
-      return diriger(V.tete, cible, vitesse(V.tete, cible, R), +s * .4, p => {
-        if (!V.trace) return; V.acc += PAS;
-        if (V.acc >= s * ecart) { V.acc = 0; const q = { x: p.x, y: p.y, a: p.dir, s: +s }; V.chaines[V.chaines.length - 1].push(q); f.setTransform(dpr, 0, 0, dpr, 0, 0); carre(f, q, L); }
+      const T = E.eventail, s = V.eventail.taille, f = fond.getContext('2d');
+      return diriger(T.tete, cible, vitesse(T.tete, cible, R), s * .4, p => {
+        if (!T.trace) return; T.acc += PAS;
+        if (T.acc >= s * V.eventail.ecart) { T.acc = 0; const q = { x: p.x, y: p.y, a: p.dir, s }; T.chaines[T.chaines.length - 1].push(q); f.setTransform(dpr, 0, 0, dpr, 0, 0); carre(f, q, L); }
       });
     }
     function boucle() {
       raf = requestAnimationFrame(boucle); if (!vivant) return;
       if (main.modele && video.readyState >= 2) lireMain();
       if (avancer()) sale = true;
-      if (sale) { sale = false; peindre(); }
+      if (sale || main.deux) { sale = false; peindre(); }
     }
 
     /* ── actions ── */
     function poser() {
       if (mode === 'ruban') {
         const S = E.ruban, l = S.libre; if (l.pts.length < 8) return;
-        S.poses.push({ pts: l.pts, larg: l.larg }); const f = fond.getContext('2d'); f.setTransform(dpr, 0, 0, dpr, 0, 0); ruban(f, l, L, S.fond);
-        S.libre = { pts: [{ x: l.t.x, y: l.t.y }], larg: +vals.ruban[0], t: { ...l.t } };
+        S.poses.push({ pts: l.pts, larg: l.larg }); const f = fond.getContext('2d'); f.setTransform(dpr, 0, 0, dpr, 0, 0); ruban(f, l, L);
+        S.libre = { pts: [{ x: l.t.x, y: l.t.y }], larg: V.ruban.largeur, t: { ...l.t } };
       } else if (mode === 'onde') {
         const v = E.onde.vif; if (!v) return; E.onde.centres.push({ ...v }); E.onde.vif = null;
       }
       sale = true; dire(); ctx.annoncer?.('Posé.');
     }
     function tracer(on) {
-      const V = E.eventail; if (on === V.trace) return;
-      V.trace = on; if (on) { V.chaines.push([]); V.acc = 1; } else if (!V.chaines.at(-1)?.length) V.chaines.pop();
+      const T = E.eventail; if (on === T.trace) return;
+      T.trace = on; if (on) { T.chaines.push([]); T.acc = 1; } else if (!T.chaines.at(-1)?.length) T.chaines.pop();
       sale = true; dire();
+    }
+    function effacer() {
+      if (mode === 'ruban') { const t = E.ruban.libre.t; E.ruban.poses = []; E.ruban.libre = { pts: [{ x: t.x, y: t.y }], larg: V.ruban.largeur, t: { ...t } }; }
+      else if (mode === 'onde') { E.onde.centres = []; E.onde.vif = null; }
+      else { if (E.eventail.trace) tracer(false); E.eventail.chaines = []; }
+      refaire(); dire(); ctx.annoncer?.('Tout est effacé.');
     }
     function dire(t) {
       if (t) { info.textContent = t; return; }
       const n = mode === 'ruban' ? E.ruban.poses.length : mode === 'onde' ? E.onde.centres.length : E.eventail.chaines.length;
       const mots = { ruban: ['ruban posé', 'rubans posés'], onde: ['tourbillon', 'tourbillons'], eventail: ['éventail', 'éventails'] }[mode];
-      info.textContent = main.modele ? (main.vu ? 'Main vue : l’index dirige, pince pour ' + (mode === 'eventail' ? 'tracer.' : 'poser.') : 'Montre ta main face à la caméra.') : (n ? `${n} ${n > 1 ? mots[1] : mots[0]}` : MODES[mode].nom);
+      info.textContent = main.modele
+        ? (main.vu ? MODES[mode].main + ' Deux mains une seconde : tout s’efface.' : 'Montre ta main face à la caméra.')
+        : (n ? `${n} ${n > 1 ? mots[1] : mots[0]}` : MODES[mode].nom);
     }
     function choisir(m) {
       mode = m; const d = MODES[m];
       zone.querySelectorAll('[data-mode]').forEach(b => { const on = b.dataset.mode === m; b.classList.toggle('plein', on); b.setAttribute('aria-pressed', on); });
       $('[data-note]').textContent = d.note;
-      [[v1, d.s1, '[data-l1]', 0], [v2, d.s2, '[data-l2]', 1]].forEach(([el, s, l, i]) => { $(l).textContent = s[0]; el.min = s[1]; el.max = s[2]; el.step = s[3]; el.value = vals[m][i]; });
-      $('[data-fond]').hidden = m !== 'ruban';
       const im = IM[d.img] || IM[0];
       if (im) { refImg.src = `${ctx.racine}img/g/${im.f}`; refImg.alt = im.t; refImg.title = im.t; refImg.hidden = false; } else refImg.hidden = true;
       affiche.style.setProperty('--gr-r', d.r.toFixed(4)); cible = null; E.onde.vif = null;
-      L = 0; mesurer(); dire();
+      L = 0; mesurer(); dire(); panneauReglages();
     }
+
+    /* ── panneau de réglages (seulement avec ?reglages dans l'adresse) ── */
+    function panneauReglages() {
+      if (!chantier) return;
+      panneau.innerHTML = `<strong>Réglages · ${MODES[mode].nom}</strong>` +
+        CURSEURS[mode].map(([k, nom, a, b, p]) => `<label>${nom}<output data-o="${k}">${V[mode][k]}</output><input type="range" data-k="${k}" min="${a}" max="${b}" step="${p}" value="${V[mode][k]}"></label>`).join('') +
+        (mode === 'onde' ? `<span data-ouv>Ouverture de la main : –</span>` : '') +
+        `<button type="button" class="bouton" data-copier>Copier les réglages</button><span data-ok></span>`;
+    }
+    panneau.addEventListener('input', e => {
+      const k = e.target.dataset.k; if (!k) return;
+      V[mode][k] = +e.target.value; panneau.querySelector(`[data-o="${k}"]`).textContent = e.target.value;
+      if (mode === 'ruban') E.ruban.libre.larg = V.ruban.largeur;
+      sale = true;
+    });
+    panneau.addEventListener('click', e => {
+      if (!e.target.closest('[data-copier]')) return;
+      const texte = `Réglages Grignani : ${Object.entries(V).map(([m, o]) => `${m} { ${Object.entries(o).map(([k, v]) => `${k}: ${v}`).join(', ')} }`).join(' ; ')}`;
+      navigator.clipboard?.writeText(texte).then(() => { panneau.querySelector('[data-ok]').textContent = 'Copié'; }, () => prompt('Copie ce texte :', texte));
+    });
 
     /* ── souris ── */
     const ou = e => { const r = affiche.getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width, y: (e.clientY - r.top) / r.width }; };
@@ -265,43 +298,51 @@ export default {
     affiche.addEventListener('pointerup', () => { if (mode === 'eventail') tracer(false); else poser(); });
     affiche.addEventListener('pointerleave', () => { if (mode === 'onde' && !main.modele) { E.onde.vif = null; cible = null; sale = true; } });
 
-    /* ── réglages et boutons ── */
+    /* ── boutons ── */
     zone.querySelectorAll('[data-mode]').forEach(b => b.addEventListener('click', () => choisir(b.dataset.mode)));
-    v1.addEventListener('input', () => { vals[mode][0] = +v1.value; if (mode === 'ruban') { E.ruban.libre.larg = +v1.value; if (E.ruban.fond === 'raye') refaire(); } sale = true; });
-    v2.addEventListener('input', () => { vals[mode][1] = +v2.value; sale = true; });
-    selFond.addEventListener('change', () => { E.ruban.fond = selFond.value; refaire(); });
     refImg.addEventListener('click', () => zone.closest('.pg')?.querySelector(`.pg-vignettes [data-image="${MODES[mode].img}"]`)?.click());
     $('[data-annuler]').addEventListener('click', () => {
       if (mode === 'ruban') E.ruban.poses.pop(); else if (mode === 'onde') E.onde.centres.pop(); else E.eventail.chaines.pop();
       refaire(); dire();
     });
-    $('[data-vider]').addEventListener('click', () => {
-      if (mode === 'ruban') { const t = E.ruban.libre.t; E.ruban.poses = []; E.ruban.libre = { pts: [{ x: t.x, y: t.y }], larg: +vals.ruban[0], t: { ...t } }; }
-      else if (mode === 'onde') { E.onde.centres = []; E.onde.vif = null; }
-      else E.eventail.chaines = [];
-      refaire(); dire();
-    });
+    $('[data-vider]').addEventListener('click', effacer);
 
     /* ── la main, à la webcam ── */
-    const main = { modele: null, flux: null, vu: false, pince: false, compte: 0, ts: 0, tv: -1, pos: null, vuA: 0 };
+    const main = { modele: null, flux: null, vu: false, pince: false, compte: 0, ts: 0, tv: -1, pos: null, vuA: 0, ouverture: .5, deux: 0, efface: false };
+    const d2 = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
     function lireMain() {
       if (video.currentTime === main.tv) return;                          // une détection par image de la caméra, pas plus
       main.tv = video.currentTime; main.ts = Math.max(main.ts + 1, performance.now());
       let r; try { r = main.modele.detectForVideo(video, main.ts); } catch { return; }
-      const m = r.landmarks?.[0], maintenant = performance.now();
+      const mains = r.landmarks || [], maintenant = performance.now();
+      // deux mains face à la caméra : on compte une seconde, puis tout s'efface (une seule fois, jusqu'à ce qu'on baisse une main)
+      if (mains.length >= 2) {
+        if (main.pince) { main.pince = false; if (mode === 'eventail') tracer(false); }
+        if (!main.deux && !main.efface) main.deux = maintenant;
+        if (main.deux && !main.efface && maintenant - main.deux >= EFFACER_MS) { effacer(); main.efface = true; setTimeout(() => { main.deux = 0; sale = true; }, 400); }
+        main.vuA = maintenant; sale = true; return;
+      }
+      if (main.deux && !main.efface) { main.deux = 0; sale = true; }
+      main.efface = false;
+      const m = mains[0];
       if (!m) { if (main.vu && maintenant - main.vuA > 500) { main.vu = false; main.pos = null; if (main.pince) { main.pince = false; if (mode === 'eventail') tracer(false); } dire(); sale = true; } return; }
       main.vuA = maintenant; if (!main.vu) { main.vu = true; dire(); }
       const z = 1.4, px = borne((.5 - m[8].x) * z + .5, 0, 1), py = borne(((m[8].y - .5) * z + .5) * H(), 0, H());
       main.pos = main.pos ? { x: main.pos.x + (px - main.pos.x) * .55, y: main.pos.y + (py - main.pos.y) * .55 } : { x: px, y: py };
       cible = { ...main.pos }; sale = true;
+      const paume = d2(m[0], m[9]) || .1;
+      // ouverture de la main : distance moyenne du bout des quatre doigts au poignet, rapportée à la paume (poing ≈ 1, main ouverte ≈ 2)
+      const ouv = borne(([8, 12, 16, 20].reduce((t, i) => t + d2(m[i], m[0]), 0) / 4 / paume - 1.15) / .75, 0, 1);
+      main.ouverture += (ouv - main.ouverture) * .35;
+      if (chantier && mode === 'onde') { const o = panneau.querySelector('[data-ouv]'); if (o) o.textContent = `Ouverture de la main : ${Math.round(main.ouverture * 100)} %`; }
       // pincement mesuré par rapport à la taille de la main, avec une marge pour ne pas clignoter
-      const taille = Math.hypot(m[0].x - m[9].x, m[0].y - m[9].y) || .1, ecart = Math.hypot(m[4].x - m[8].x, m[4].y - m[8].y) / taille;
+      const ecart = d2(m[4], m[8]) / paume;
       main.compte = ecart < .3 ? main.compte + 1 : 0;
       if (!main.pince && main.compte >= 2) { main.pince = true; if (mode === 'eventail') tracer(true); else poser(); }
       else if (main.pince && ecart > .5) { main.pince = false; if (mode === 'eventail') tracer(false); }
     }
     function couperCamera() {
-      main.flux?.getTracks().forEach(p => p.stop()); main.flux = null; main.modele?.close?.(); main.modele = null; main.vu = false; main.pos = null;
+      main.flux?.getTracks().forEach(p => p.stop()); main.flux = null; main.modele?.close?.(); main.modele = null; main.vu = false; main.pos = null; main.deux = 0;
       video.hidden = true; bMain.textContent = 'Diriger avec la main'; bMain.setAttribute('aria-pressed', 'false');
     }
     bMain.addEventListener('click', async () => {
@@ -312,7 +353,7 @@ export default {
         video.srcObject = main.flux; await video.play(); video.hidden = false;
         const { FilesetResolver, HandLandmarker } = await import(`${ctx.racine}vendor/mediapipe/vision_bundle.mjs`);
         const fs = await FilesetResolver.forVisionTasks(`${ctx.racine}vendor/mediapipe/wasm`);
-        const options = delegate => ({ baseOptions: { modelAssetPath: URL_MAINS, delegate }, runningMode: 'VIDEO', numHands: 1,
+        const options = delegate => ({ baseOptions: { modelAssetPath: URL_MAINS, delegate }, runningMode: 'VIDEO', numHands: 2,
           minHandDetectionConfidence: .4, minHandPresenceConfidence: .4, minTrackingConfidence: .4 });
         let m; try { m = await HandLandmarker.createFromOptions(fs, options('GPU')); } catch { m = await HandLandmarker.createFromOptions(fs, options('CPU')); }
         if (!vivant || !main.flux) { m.close?.(); return; }
@@ -322,7 +363,7 @@ export default {
     });
 
     const ro = new ResizeObserver(mesurer); ro.observe(affiche);
-    choisir('ruban'); raf = requestAnimationFrame(boucle);
+    choisir('eventail'); raf = requestAnimationFrame(boucle);
     return () => { vivant = false; cancelAnimationFrame(raf); ro.disconnect(); couperCamera(); };
   },
 };
