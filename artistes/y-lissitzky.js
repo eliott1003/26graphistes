@@ -3,24 +3,47 @@
 // exactement comme sur l'affiche ; tiré à fond, il fend le cercle blanc en deux.
 // À la webcam : on pince le pouce et l'index, on recule la main, on ouvre les doigts. La souris et le doigt marchent toujours.
 //
-// L'affiche est dans le domaine public (Lissitzky est mort en 1941) : elle est redessinée en code.
-// PROVISOIRE : composition posée de mémoire, sans l'image sous les yeux. À caler sur img/y/ref.jpg quand Eliott l'envoie
-// (places dans GEO, en fractions de la largeur ; textes dans TEXTES).
+// L'affiche est dans le domaine public (Lissitzky est mort en 1941) : elle est redessinée en code, calée sur img/y/ref.jpg.
+// Composition relevée sur l'affiche (img/y/ref.jpg, 2576 × 2061 px ; cadre intérieur de (84, 76) à (2488, 1993)).
+// Les places sont notées en px de l'image et ramenées en fractions de la largeur du cadre par P().
 
-const FORMAT = 1.36; // largeur / hauteur de la feuille
-const PAPIER = '#e8e0cd', NOIR = '#16130f', ROUGE = '#d0251c', BLANC = '#f4efe2', GRIS = '#8d887c';
-const GEO = {
-  noir: [[.5, 0], [1, 0], [1, 1 / FORMAT], [.3, 1 / FORMAT]], // le champ noir, à droite de la diagonale
-  cercle: { x: .64, y: .365, r: .2 },
-  pointe: { x: .665, y: .385 },   // où la pointe du coin s'arrête sur l'affiche
-  axe: Math.atan2(.25, .49),      // direction du coin
-  longueur: .56, demiBase: .125,
+const FORMAT = 2404 / 1917; // largeur / hauteur du cadre
+const PAPIER = '#ebe5d6', NOIR = '#121110', ROUGE = '#e2482b', BLANC = '#f3efe4', GRIS = '#8a8781';
+const P = (a, b) => [(a - 84) / 2404, (b - 76) / 2404];
+const L = v => v / 2404;
+const triangle = (A, B, C) => { // le coin : pointe C, base AB
+  const M = [(A[0] + B[0]) / 2, (A[1] + B[1]) / 2], dx = C[0] - M[0], dy = C[1] - M[1];
+  return { pointe: { x: P(...C)[0], y: P(...C)[1] }, axe: Math.atan2(dy, dx), longueur: L(Math.hypot(dx, dy)), demiBase: L(Math.hypot(A[0] - B[0], A[1] - B[1]) / 2) };
 };
-const TEXTES = [ // les quatre mots de l'affiche
-  { t: 'КЛИНОМ', x: .2, y: .075, c: .034, a: -.5, coul: NOIR },
-  { t: 'КРАСНЫМ', x: .345, y: .245, c: .03, a: GEO.axe, coul: BLANC, coin: true },
-  { t: 'БЕЙ', x: .575, y: .475, c: .04, a: 0, coul: NOIR },
-  { t: 'БЕЛЫХ', x: .8, y: .66, c: .042, a: -.12, coul: BLANC },
+const GEO = {
+  noir: [P(1751, 76), P(2488, 76), P(2488, 1993), P(777, 1993)], // le champ noir, à droite de la diagonale
+  cercle: { x: P(1708, 1225)[0], y: P(1708, 1225)[1], r: L(572) },
+  ...triangle([700, 344], [380, 954], [1704, 1212]), // le grand coin rouge, sa pointe enfoncée dans le cercle
+};
+// petits éléments de l'affiche : poly (px de l'image) ou barre [x, y, longueur, épaisseur, angle]
+const DECOR = [
+  { coul: GRIS, poly: [[1144, 584], [1484, 370], [1592, 604], [1300, 810]] },        // le carré gris penché
+  { coul: GRIS, poly: [[1030, 1134], [1124, 1134], [1124, 1410], [1030, 1410]] },     // la barre grise verticale
+  { coul: ROUGE, poly: [[1000, 1296], [1292, 1276], [1052, 1326]] },                   // les deux échardes à gauche du cercle
+  { coul: NOIR, poly: [[968, 1280], [1250, 1290], [1100, 1262]] },
+  { coul: ROUGE, poly: [[1378, 708], [1700, 748], [1384, 738]] },                      // en haut du cercle
+  { coul: NOIR, barre: [1470, 758, 240, 10, .05] }, { coul: ROUGE, barre: [1480, 746, 230, 10, .05] },
+  { coul: ROUGE, poly: [[1830, 692], [2094, 650], [1872, 752]] },
+  { coul: BLANC, rond: [2194, 614, 20] },
+  { coul: ROUGE, barre: [1660, 372, 250, 12, -.41] }, { coul: BLANC, barre: [1666, 352, 250, 18, -.41] }, // dans le noir, en haut
+  { coul: BLANC, barre: [1748, 206, 150, 10, 0] }, { coul: ROUGE, barre: [1840, 168, 26, 70, 0] }, { coul: GRIS, barre: [1820, 190, 22, 40, 0] },
+  { coul: BLANC, barre: [1920, 140, 60, 12, -1.15] }, { coul: BLANC, barre: [1975, 180, 80, 14, -1.15] }, { coul: BLANC, barre: [2085, 128, 40, 12, -.95] },
+  { coul: BLANC, barre: [2036, 276, 124, 14, .06] }, { coul: BLANC, barre: [2132, 310, 40, 10, .06] }, { coul: BLANC, barre: [2204, 328, 80, 10, .06] },
+  { coul: ROUGE, barre: [410, 1488, 360, 20, 0] }, { coul: NOIR, barre: [410, 1504, 360, 3, 0] },          // en bas à gauche
+  { coul: ROUGE, poly: [[684, 1536], [750, 1536], [750, 1680], [684, 1680]] },
+  { coul: ROUGE, barre: [778, 1574, 46, 13, 0] }, { coul: ROUGE, barre: [778, 1616, 46, 13, 0] }, { coul: ROUGE, barre: [778, 1656, 46, 13, 0] },
+  { coul: BLANC, barre: [950, 1830, 100, 16, 1.12] }, { coul: BLANC, barre: [1022, 1872, 76, 16, 1.12] }, // dans le noir, en bas
+];
+const TEXTES = [ // les quatre mots de l'affiche ; c = corps en fraction de la largeur
+  { t: 'КЛИНОМ', p: P(352, 362), c: L(118), a: .6, coul: NOIR },
+  { t: 'КРАСНЫМ', p: P(452, 1112), c: L(72), a: .46, coul: PAPIER, contour: NOIR },
+  { t: 'БЕЙ', p: P(1862, 1608), c: L(128), a: -.33, coul: ROUGE },
+  { t: 'БЕЛЫХ', p: P(2182, 1818), c: L(86), a: .04, coul: '#cfcbc2', contour: '#2a2826', boite: GRIS },
 ];
 const TIR_MAX = .2, SEUIL = .62; // recul maximal (fraction de la largeur) ; au-delà de SEUIL × TIR_MAX, le cercle se fend
 const URL_MAINS = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
@@ -92,14 +115,19 @@ export default {
       x.translate(sx, sy);
       // le champ noir
       x.beginPath(); GEO.noir.forEach(([a, b], i) => i ? x.lineTo(a * W, b * W) : x.moveTo(a * W, b * W)); x.closePath(); x.fillStyle = NOIR; x.fill();
-      // petits éléments : barres et rectangles qui volent autour
-      const barre = (a, b, l, e, ang, coul) => { x.save(); x.translate(a * W, b * W); x.rotate(ang); x.fillStyle = coul; x.fillRect(0, -e * W / 2, l * W, e * W); x.restore(); };
-      barre(.08, .56, .12, .012, -.5, NOIR); barre(.12, .62, .07, .02, -.5, GRIS); barre(.2, .66, .05, .008, -.5, NOIR);
-      barre(.86, .13, .09, .01, .9, BLANC); barre(.9, .3, .06, .016, .9, GRIS); barre(.83, .5, .1, .006, .35, BLANC); barre(.86, .54, .07, .006, .35, ROUGE);
-      barre(.42, .64, .09, .014, GEO.axe, GRIS);
+      // petits éléments de l'affiche (les gris passent sous le cercle, le reste dessus)
+      const decor = e => {
+        x.fillStyle = e.coul; x.beginPath();
+        if (e.poly) e.poly.forEach((q, i) => { const [u, v] = P(...q); x[i ? 'lineTo' : 'moveTo'](u * W, v * W); });
+        else if (e.rond) { const [u, v] = P(e.rond[0], e.rond[1]); x.arc(u * W, v * W, L(e.rond[2]) * W, 0, 7); }
+        else { const [bx0, by0, l, ep, ang] = e.barre, [u, v] = P(bx0, by0); x.save(); x.translate(u * W, v * W); x.rotate(ang); x.rect(0, -L(ep) * W / 2, L(l) * W, L(ep) * W); x.restore(); }
+        x.fill();
+      };
+      DECOR.filter(e => e.coul === GRIS && e.poly).forEach(decor);
       // le cercle blanc (entier, ou en deux moitiés)
       if (fente > 0) { demiCercle(1, fente); demiCercle(-1, fente); }
       else { const c = GEO.cercle; x.beginPath(); x.arc(c.x * W, c.y * W, c.r * W, 0, Math.PI * 2); x.fillStyle = BLANC; x.fill(); }
+      DECOR.filter(e => !(e.coul === GRIS && e.poly)).forEach(decor);
       // éclats
       for (const e of eclats) { x.save(); x.translate(e.x * W, e.y * W); x.rotate(e.a); x.globalAlpha = borne(e.vie, 0, 1); x.beginPath(); x.moveTo(e.t * W, 0); x.lineTo(-e.t * W * .6, e.t * W * .5); x.lineTo(-e.t * W * .5, -e.t * W * .6); x.closePath(); x.fillStyle = e.c; x.fill(); x.restore(); }
       // l'élastique du lance-pierre, entre la base du coin au repos et la base tirée
@@ -114,9 +142,14 @@ export default {
       // les mots
       x.textAlign = 'center'; x.textBaseline = 'middle';
       for (const m of TEXTES) {
-        x.save(); x.translate((m.x + (m.coin ? ux * s : 0)) * W, (m.y + (m.coin ? uy * s : 0)) * W); x.rotate(m.a);
-        x.font = `700 ${m.c * W}px "Helvetica Neue", Helvetica, Arial, sans-serif`; x.fillStyle = m.coul; x.fillText(m.t, 0, 0); x.restore();
+        x.save(); x.translate(m.p[0] * W, m.p[1] * W); x.rotate(m.a);
+        x.font = `700 ${m.c * W}px "Helvetica Neue", Helvetica, Arial, sans-serif`;
+        if (m.boite) { const l = x.measureText(m.t).width; x.fillStyle = m.boite; x.fillRect(-l / 2 - m.c * W * .12, -m.c * W * .5, l + m.c * W * .24, m.c * W); }
+        x.fillStyle = m.coul; x.fillText(m.t, 0, 0);
+        if (m.contour) { x.lineWidth = Math.max(1, m.c * W * .05); x.strokeStyle = m.contour; x.strokeText(m.t, 0, 0); }
+        x.restore();
       }
+      x.lineWidth = Math.max(1, W * .0016); x.strokeStyle = NOIR; x.strokeRect(W * .004, W * .004, W - W * .008, H - W * .008); // le filet du cadre
       // la main, à la webcam
       if (main.modele && main.pos) { x.beginPath(); x.arc(main.pos.x * W, main.pos.y * H, W * (main.pince ? .012 : .02), 0, 7); x.lineWidth = Math.max(2, W * .004); x.strokeStyle = main.pince ? ROUGE : GRIS; x.stroke(); }
       x.setTransform(1, 0, 0, 1, 0, 0);
