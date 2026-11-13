@@ -11,15 +11,15 @@ const NOIR = '#0c0c0c', BLANC = '#fbfaf6', PAPIER = '#e8e7e3';
 const PAS = .008, BANDES = 13;          // pas de la tête du ruban (largeurs de feuille) ; 7 rayures noires, 6 blanches
 const URL_MAINS = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
 const MODES = {
-  ruban: { r: 1395 / 2000, img: 0, nom: 'Ruban',
-    note: 'Comme sur l’affiche de 1967 : un ruban rayé suit ta souris, se courbe et passe sur lui-même. Clique pour le poser, puis continue.',
-    s1: ['Largeur du ruban', .08, .5, .005, .27], s2: ['Longueur du ruban', .6, 6, .05, 2.6] },
-  onde: { r: 1440 / 1127, img: 3, nom: 'Onde',
-    note: 'Comme sur Linea grafica (1965) : les rayures se tordent autour de ta souris. Clique pour fixer un tourbillon.',
-    s1: ['Taille du tourbillon', .08, .5, .005, .26], s2: ['Torsion', -4, 4, .05, 2.4] },
   eventail: { r: 2323 / 1599, img: 4, nom: 'Éventail',
     note: 'Comme sur l’annonce Alfieri & Lacroix : maintiens le clic et trace, les carrés se déploient en éventail.',
     s1: ['Taille des carrés', .05, .3, .005, .15], s2: ['Écart entre les carrés', .04, .3, .005, .1] },
+  onde: { r: 1440 / 1127, img: 3, nom: 'Onde',
+    note: 'Comme sur Linea grafica (1965) : les rayures se tordent autour de ta souris. Clique pour fixer un tourbillon.',
+    s1: ['Taille du tourbillon', .08, .5, .005, .26], s2: ['Torsion', -4, 4, .05, 2.4] },
+  ruban: { r: 1395 / 2000, img: 0, nom: 'Ruban',
+    note: 'Comme sur l’affiche de 1967 : un ruban rayé suit ta souris, se courbe et passe sur lui-même. Clique pour le poser, puis continue.',
+    s1: ['Largeur du ruban', .08, .5, .005, .27], s2: ['Longueur du ruban', .6, 6, .05, 2.6] },
 };
 const borne = (v, a, b) => Math.min(b, Math.max(a, v));
 
