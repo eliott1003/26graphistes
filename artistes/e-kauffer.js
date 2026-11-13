@@ -3,35 +3,37 @@
 // volée de huit oiseaux tournés vers la gauche (bec long, œil cerclé de jaune, ailes en longues pointes, traînées vers la droite),
 // diagonale blanche sous la volée, et les trois lignes de texte du bas à leur place.
 // Au passage de la souris, les oiseaux s'envolent, s'écartent et la suivent ; quand elle s'arrête ou sort, ils reviennent se poser en formation.
-// Reste approché : le dessin exact de chaque oiseau (sur l'affiche ils s'imbriquent en damier) et le lettrage de DAILY HERALD (dessiné à la main sur l'original).
+// Oiseaux redessinés d'après la volée (tête en coin, bec, aile dressée, aile tendue, corps et traînées), couleurs alternées en damier.\n// Reste approché : le lettrage de DAILY HERALD (dessiné à la main sur l'original). L'affiche est en domaine public.
 
 const R = 152.2 / 297.7;                 // largeur / hauteur de l'affiche
 const JAUNE = '#ffd400', NOIR = '#433f34', BLANC = '#ecece0', GRIS = '#9a8d61';
 const TEXTE = '"Caslon", "Libre Caslon Text", Georgia, serif';
 
-// Un oiseau, tête vers la droite dans son repère (sur l'affiche il est tourné vers la gauche). Les ailes partent du même côté, vers le haut et l'arrière.
-const AILE = [
-  [[8, 5], [-74, 60], [-12, 5]],          // la grande aile
-  [[-6, 5], [-66, 34], [-26, 5]],         // la seconde, plus basse
-  [[-12, 5], [-40, 24], [-30, 5]],        // le creux entre les deux
-];
-const TRAINEES = [[[-18, -6], [-118, -9], [-18, 1]], [[-22, 0], [-96, 6], [-22, 6]]];
-const CORPS = [[24, -4], [2, -9], [-30, -2], [-4, 8], [18, 5]];
-const DAMIER = [[2, -9], [-12, -1], [-4, 8], [8, 0]];
-const TETE = [[30, -5], [16, -6], [14, 5], [28, 3]];
-const BEC_H = [[28, -3], [68, 1], [28, 0]], BEC_B = [[28, 0], [68, 1], [28, 3]];
+// Un oiseau, relevé sur l'affiche (en pixels d'un agrandissement de la volée, l'œil en 0,0), tourné vers la gauche comme sur l'original :
+// tête noire en coin, long bec, une aile dressée en pointe, une aile tendue vers l'arrière, corps en parallélogrammes, traînées vers la droite.
+const F = {
+  traineeG: [[230, 118], [640, 222], [628, 238], [246, 140]],
+  traineeB: [[110, 92], [540, 206], [524, 220], [122, 112]],
+  dos: [[180, 78], [430, 130], [410, 160], [236, 156]],
+  corpsB: [[64, 86], [180, 78], [236, 156], [132, 166]],     // le corps descend en diagonale, en deux pièces de damier
+  corpsH: [[2, 10], [118, -8], [180, 78], [64, 86]],
+  aile2: [[130, -8], [480, -118], [214, 30]],              // l'aile tendue, vers le haut et l'arrière
+  aile1: [[28, -8], [-28, -148], [148, -6]],               // l'aile dressée, pointe au-dessus de la tête
+  tete: [[-26, -4], [-8, -17], [62, -15], [54, 14], [-14, 12]],
+  becH: [[-24, -1], [-142, 16], [-12, 6]], becB: [[-12, 6], [-142, 16], [-8, 12]],
+};
 const PALETTES = [
-  { ailes: [NOIR, BLANC, GRIS], trainees: [GRIS, BLANC], damier: BLANC },
-  { ailes: [NOIR, GRIS, BLANC], trainees: [BLANC, GRIS], damier: BLANC },
-  { ailes: [BLANC, NOIR, GRIS], trainees: [GRIS, BLANC], damier: GRIS },
+  { aile1: NOIR, aile2: NOIR, corpsH: BLANC, corpsB: NOIR, dos: GRIS, traineeG: GRIS, traineeB: BLANC },
+  { aile1: NOIR, aile2: BLANC, corpsH: NOIR, corpsB: BLANC, dos: NOIR, traineeG: GRIS, traineeB: BLANC },
+  { aile1: BLANC, aile2: NOIR, corpsH: GRIS, corpsB: NOIR, dos: BLANC, traineeG: BLANC, traineeB: GRIS },
+  { aile1: NOIR, aile2: GRIS, corpsH: BLANC, corpsB: GRIS, dos: NOIR, traineeG: BLANC, traineeB: GRIS },
 ];
-// La formation, relevée sur l'image : place de l'œil (en largeurs d'affiche), taille, cap (vers la gauche, un peu vers le haut).
-const YEUX = [
-  [.288, .215, 1.30, -2.93], [.445, .221, 1.38, -2.95], [.190, .330, .95, -3.02], [.381, .324, 1.12, -2.97],
-  [.669, .381, 1.00, -2.99], [.284, .401, .92, -2.98], [.209, .426, .86, -3.02], [.170, .464, .84, -3.05],
-];
-const UNITE = .0034;
-const FORMATION = YEUX.map(([ex, ey, s, r]) => { const k = UNITE * s; return [ex - (Math.cos(r) * 21 - Math.sin(r) * -1) * k, ey - (Math.sin(r) * 21 + Math.cos(r) * -1) * k, s, r]; });
+// La formation, relevée sur l'image : place de l'œil (en largeurs d'affiche) et taille. Au repos, tous regardent à gauche.
+const FORMATION = [
+  [.299, .224, 1.32], [.447, .230, 1.30], [.206, .333, .80], [.388, .328, 1.18],
+  [.660, .383, 1.00], [.295, .401, 1.22], [.226, .426, 1.00], [.186, .460, 1.00],
+].map(([x, y, s]) => [x, y, s, Math.PI]);
+const UNITE = .000677;                   // un pixel de l'agrandissement, en largeurs d'affiche
 const PRES = .2, LOIN = .44, REPOS = 1700; // la souris fait fuir en dessous de PRES, attire au-delà de LOIN ; sans mouvement pendant REPOS ms, retour
 
 export default {
@@ -60,7 +62,7 @@ export default {
     const HAUT = 1 / R;
     let L = 0, dpr = 1, vivant = true, raf = 0, avant = 0, dit = '';
     const souris = { x: .5, y: .4, t: -1e9 };
-    const oiseaux = FORMATION.map(([hx, hy, s, hr], i) => ({ hx, hy, s, hr, x: hx, y: hy, r: hr, vx: 0, vy: 0, vol: false, ph: i * 1.7, f: 1, sens: i % 2 ? 1 : -1, pal: PALETTES[i % 3] }));
+    const oiseaux = FORMATION.map(([hx, hy, s, hr], i) => ({ hx, hy, s, hr, x: hx, y: hy, r: hr, vx: 0, vy: 0, vol: false, ph: i * 1.7, f: 1, sens: i % 2 ? 1 : -1, pal: PALETTES[i % 4] }));
 
     function mesurer() {
       const r = affiche.getBoundingClientRect(); if (!r.width) return;
@@ -68,13 +70,16 @@ export default {
     }
     const poly = (pts, fy, c) => { x.beginPath(); pts.forEach(([px, py], i) => i ? x.lineTo(px, py * fy) : x.moveTo(px, py * fy)); x.closePath(); x.fillStyle = c; x.fill(); };
     function dessiner(o) {
-      const k = L * UNITE * o.s, haut = Math.cos(o.r) > 0 ? -1 : 1;      // les ailes restent côté ciel, quel que soit le cap
-      x.save(); x.translate(o.x * L, o.y * L); x.rotate(o.r); x.scale(k, k * haut);
-      const calme = Math.max(0, o.f);
-      TRAINEES.forEach((p, i) => { x.globalAlpha = calme; poly(p, 1, o.pal.trainees[i]); }); x.globalAlpha = 1;   // les traînées : seulement posé
-      AILE.forEach((p, i) => poly(p, o.f, o.pal.ailes[i]));
-      poly(CORPS, 1, NOIR); poly(DAMIER, 1, o.pal.damier); poly(TETE, 1, NOIR); poly(BEC_H, 1, BLANC); poly(BEC_B, 1, NOIR);
-      x.beginPath(); x.arc(21, -1, 3.4, 0, 7); x.fillStyle = JAUNE; x.fill(); x.beginPath(); x.arc(21, -1, 1.3, 0, 7); x.fillStyle = NOIR; x.fill();
+      const k = L * UNITE * o.s;
+      x.save(); x.translate(o.x * L, o.y * L);
+      if (Math.cos(o.r) <= 0) { x.rotate(o.r - Math.PI); x.scale(k, k); }   // vers la gauche, comme sur l'affiche
+      else { x.rotate(o.r); x.scale(-k, k); }                               // vers la droite : en miroir, les ailes restent en haut
+      const calme = Math.max(0, Math.min(1, o.f)), p = o.pal;
+      x.globalAlpha = calme; poly(F.traineeG, 1, p.traineeG); poly(F.traineeB, 1, p.traineeB); x.globalAlpha = 1;   // les traînées : posé seulement
+      poly(F.dos, 1, p.dos); poly(F.corpsB, 1, p.corpsB); poly(F.corpsH, 1, p.corpsH);
+      poly(F.aile2, o.f, p.aile2); poly(F.aile1, o.f, p.aile1);            // battement : les ailes se replient vers le corps
+      poly(F.tete, 1, NOIR); poly(F.becH, 1, BLANC); poly(F.becB, 1, GRIS);
+      x.beginPath(); x.arc(0, 0, 9, 0, 7); x.fillStyle = JAUNE; x.fill(); x.beginPath(); x.arc(0, 0, 4, 0, 7); x.fillStyle = NOIR; x.fill();
       x.restore();
     }
     function petitesCap(txt, cx, y, corps, largeur) {                    // grandes capitales + petites capitales, comme DAILY HERALD
@@ -132,7 +137,7 @@ export default {
         const v = Math.hypot(o.vx, o.vy), pres = actif ? 1 : Math.min(1, dh / .13);       // près du nid : on reprend la pose
         o.r = angle(o.r, pres > .35 ? Math.atan2(o.vy, o.vx) : o.hr, Math.min(1, dt * (pres > .35 ? 9 : 6)));
         o.ph += dt * (9 + v * 9);
-        o.f += ((1 - pres) + pres * (.3 + .7 * Math.cos(o.ph)) - o.f) * Math.min(1, dt * 18);
+        o.f += ((1 - pres) + pres * (.15 + .85 * Math.cos(o.ph)) - o.f) * Math.min(1, dt * 18);
       });
       const texte = enVol ? `${enVol} oiseau${enVol > 1 ? 'x' : ''} en vol` : 'Huit oiseaux posés, comme sur l’affiche.';
       if (texte !== dit) { dit = texte; info.textContent = texte; }
