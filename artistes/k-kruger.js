@@ -13,10 +13,13 @@
 
 const ROUGE = '#e2001a', NOIR = '#0d0d0d', BLANC = '#f7f5f0';
 const POLICE = 'italic 900 100px Jost, Futura, "Trebuchet MS", sans-serif';
-const CONTRASTE = 1.6;
+/* Le noir et blanc « photostat » : courbe en S (douceur = largeur du passage du noir au blanc, milieu = où il se fait), grain posé par-dessus.
+   Réglables avec ?reglages dans l'adresse ; « Copier les réglages » donne les valeurs à figer ici. */
+const DEFAUT = { douceur: 18, milieu: 122, grain: .4, taille: 2 };
 const URL_VISAGE = 'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite';
 
-const LUT = new Uint8ClampedArray(256); for (let i = 0; i < 256; i++) LUT[i] = (i - 128) * CONTRASTE + 132;
+const LUT = new Uint8ClampedArray(256);
+function faireLUT(r) { for (let i = 0; i < 256; i++) LUT[i] = 255 / (1 + Math.exp(-(i - r.milieu) / r.douceur)); }
 
 /* Image de départ sans photo : une silhouette de profil. */
 function silhouette(L, H) {
@@ -37,10 +40,21 @@ function silhouette(L, H) {
   x.globalCompositeOperation = 'source-over';
   return c;
 }
-function carreauDeGrain() {
-  const c = document.createElement('canvas'); c.width = c.height = 256; const x = c.getContext('2d'), d = x.createImageData(256, 256), p = d.data;
+/* bruit de luminance (-1..1), en grains de taille × taille pixels, sur un carreau de 512 × 512 répété */
+const NB = 512;
+function bruit(taille) {
+  const t = Math.max(1, Math.round(taille)), b = new Float32Array(NB * NB), n = Math.ceil(NB / t), g = new Float32Array(n * n);
+  for (let i = 0; i < g.length; i++) g[i] = (Math.random() + Math.random() - 1);
+  for (let y = 0; y < NB; y++) for (let x = 0; x < NB; x++) b[y * NB + x] = g[((y / t) | 0) * n + ((x / t) | 0)];
+  return b;
+}
+/* un carreau de grain ; taille > 1 : chaque grain fait taille × taille pixels (plus grossier, comme un tirage agrandi) */
+function carreauDeGrain(taille) {
+  const n = 256, c = document.createElement('canvas'); c.width = c.height = n; const x = c.getContext('2d'), d = x.createImageData(n, n), p = d.data;
   for (let i = 0; i < p.length; i += 4) { p[i] = p[i + 1] = p[i + 2] = Math.random() * 255; p[i + 3] = 255; }
-  x.putImageData(d, 0, 0); return c;
+  x.putImageData(d, 0, 0); if (taille <= 1) return c;
+  const g = document.createElement('canvas'); g.width = g.height = Math.round(n * taille); const y = g.getContext('2d');
+  y.imageSmoothingEnabled = taille % 1 !== 0; y.drawImage(c, 0, 0, g.width, g.height); return g;
 }
 
 /* Coupe la phrase en n morceaux de longueurs proches. */
@@ -139,6 +153,12 @@ export default {
 .kr{--f:.74;display:grid;grid-template-columns:auto minmax(220px,300px);gap:clamp(16px,3cqw,40px);justify-content:center;align-items:end;height:100cqh}
 .kr-affiche{position:relative;height:min(100cqh,calc((100cqw - 340px)/var(--f)));aspect-ratio:var(--f);background:#000;box-shadow:0 0 0 1px rgba(0,0,0,.35),0 30px 54px -22px rgba(0,0,0,.85)}
 .kr-affiche canvas{display:block;width:100%;height:100%}
+.kr-reglages{position:absolute;top:8px;right:8px;z-index:2;display:grid;gap:6px;width:min(230px,80%);padding:10px 12px;background:rgba(15,15,15,.88);color:#fff;border-radius:6px;font:600 12px/1.25 Archivo,sans-serif}
+.kr-reglages summary{cursor:pointer}
+.kr-reglages:not([open]){width:auto}
+.kr-reglages label{display:grid;gap:2px}
+.kr-reglages input{accent-color:#fff;width:100%}
+.kr-reglages button{min-height:30px;border:1.5px solid #fff;border-radius:4px;background:none;color:#fff;font:600 12px/1 Archivo,sans-serif}
 .kr-cote{display:grid;gap:clamp(6px,1.3cqh,11px);align-content:end;min-height:0;padding-bottom:2px}
 .kr-cote p{margin:0}
 .kr-groupe{display:grid;gap:clamp(6px,1.3cqh,11px);align-content:start}
@@ -167,9 +187,18 @@ export default {
 `,
   monter(zone, ctx) {
     const ref = ctx.artiste.images?.[0];
+    const REGLAGES = new URLSearchParams(location.search).has('reglages');
+    const R = { ...DEFAUT }; faireLUT(R);
     zone.innerHTML = `
       <div class="kr">
-        <div class="kr-affiche"><canvas data-export aria-label="Ton image : un visage en noir et blanc, ta phrase collée dessus"></canvas></div>
+        <div class="kr-affiche"><canvas data-export aria-label="Ton image : un visage en noir et blanc, ta phrase collée dessus"></canvas>${REGLAGES ? `
+          <details class="kr-reglages" open><summary>Réglages du noir et blanc</summary>
+            <label>Douceur du passage noir / blanc <span data-v="douceur"></span><input type="range" data-r="douceur" min="6" max="60" step="1"></label>
+            <label>Milieu (plus haut = plus sombre) <span data-v="milieu"></span><input type="range" data-r="milieu" min="70" max="190" step="1"></label>
+            <label>Grain <span data-v="grain"></span><input type="range" data-r="grain" min="0" max="1" step="0.01"></label>
+            <label>Taille du grain <span data-v="taille"></span><input type="range" data-r="taille" min="1" max="5" step="0.5"></label>
+            <button type="button" data-copier>Copier les réglages</button>
+          </details>` : ''}</div>
         <div class="kr-cote">
           ${ref ? `<img class="kr-ref" src="${ctx.racine}img/k/${ref.f}" alt="L’œuvre de Barbara Kruger, 1981">` : ''}
           <div class="kr-groupe"><p class="etiquette" aria-live="polite" data-info></p>
@@ -191,7 +220,7 @@ export default {
     const bloc = q('.kr'), cv = q('canvas'), x = cv.getContext('2d'), info = q('[data-info]'), phrase = q('#kr-phrase'), fichier = q('#kr-fichier');
     const bCam = q('[data-camera]'), bPhoto = q('[data-photo]'), bOeuvre = q('[data-oeuvre]'), caseCadrer = q('[data-cadrer]'), ligneCadrer = q('.kr-case');
     const base = document.createElement('canvas'), bx = base.getContext('2d', { willReadFrequently: true });   // l'image traitée, sans le texte
-    const grain = bx.createPattern(carreauDeGrain(), 'repeat');
+    let grain = bx.createPattern(carreauDeGrain(R.taille), 'repeat'), tuile = Math.round(256 * Math.max(1, R.taille)), bruitL = bruit(R.taille);
     const video = document.createElement('video'); video.muted = true; video.playsInline = true;
     const origine = ref ? new Image() : null;
     let etat = 'silhouette';   // 'oeuvre' | 'silhouette' | 'photo' | 'direct' | 'fige'
@@ -228,14 +257,18 @@ export default {
       bx.save(); if (miroir) { bx.translate(L, 0); bx.scale(-1, 1); }
       bx.drawImage(el, r.x, r.y, r.w, r.h, 0, 0, L, H); bx.restore();
       const d = bx.getImageData(0, 0, L, H), p = d.data, scinder = C().scinder, moitie = L >> 1;
-      for (let y = 0, i = 0; y < H; y++) for (let k = 0; k < L; k++, i += 4) {
-        let g = LUT[(p[i] * 77 + p[i + 1] * 150 + p[i + 2] * 29) >> 8];
+      const amp = R.grain * 90, ox = (Math.random() * NB) | 0, oy = (Math.random() * NB) | 0;
+      for (let y = 0, i = 0; y < H; y++) { const ligne = ((y + oy) % NB) * NB; for (let k = 0; k < L; k++, i += 4) {
+        let v = ((p[i] * 77 + p[i + 1] * 150 + p[i + 2] * 29) >> 8) + bruitL[ligne + (k + ox) % NB] * amp;   // le grain avant la courbe : il mouchette les passages
+        let g = LUT[v < 0 ? 0 : v > 255 ? 255 : v | 0];
         if (scinder && k >= moitie) g = 255 - g;                              // Your body is a battleground : une moitié en négatif
         p[i] = p[i + 1] = p[i + 2] = g;
-      }
+      } }
       bx.putImageData(d, 0, 0);
-      bx.save(); bx.globalCompositeOperation = 'overlay'; bx.globalAlpha = .34; bx.translate(-Math.random() * 256, -Math.random() * 256);
-      bx.fillStyle = grain; bx.fillRect(0, 0, L + 256, H + 256); bx.restore();
+      if (R.grain > 0) {                                                       // et un voile de grain fin par-dessus, dans les gris
+        bx.save(); bx.globalCompositeOperation = 'overlay'; bx.globalAlpha = R.grain * .5; bx.translate(-Math.random() * tuile, -Math.random() * tuile);
+        bx.fillStyle = grain; bx.fillRect(0, 0, L + tuile, H + tuile); bx.restore();
+      }
     }
     function peindre() {
       if (etat === 'oeuvre') {
@@ -369,6 +402,22 @@ export default {
       e.preventDefault(); changerCompo(compo + (e.shiftKey ? -1 : 1));
     }
     addEventListener('keydown', touche);
+
+    /* réglages du noir et blanc (?reglages) */
+    if (REGLAGES) {
+      const pan = q('.kr-reglages');
+      const maj = () => pan.querySelectorAll('[data-r]').forEach(i => { i.value = R[i.dataset.r]; pan.querySelector(`[data-v="${i.dataset.r}"]`).textContent = ': ' + R[i.dataset.r]; });
+      pan.addEventListener('input', e => {
+        const k = e.target.dataset.r; if (!k) return; R[k] = +e.target.value; maj();
+        if (k === 'taille') { grain = bx.createPattern(carreauDeGrain(R.taille), 'repeat'); tuile = Math.round(256 * Math.max(1, R.taille)); bruitL = bruit(R.taille); }
+        faireLUT(R); if (etat !== 'direct' && etat !== 'oeuvre') refaireFixe();
+      });
+      pan.querySelector('[data-copier]').addEventListener('click', e => {
+        const t = `Réglages Kruger : douceur=${R.douceur} ; milieu=${R.milieu} ; grain=${R.grain} ; taille=${R.taille}`;
+        navigator.clipboard?.writeText(t).then(() => { e.target.textContent = 'Copié'; }, () => prompt('Copie ce texte :', t));
+      });
+      maj();
+    }
 
     formater(); majOeuvres(); passer('silhouette');
     if (origine) { origine.onload = () => { if (vivant && etat === 'silhouette') passer('oeuvre'); }; origine.src = ctx.racine + 'img/k/' + ref.f; }
