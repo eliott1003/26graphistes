@@ -154,6 +154,7 @@ export default {
 .kr-affiche{position:relative;height:min(100cqh,calc((100cqw - 340px)/var(--f)));aspect-ratio:var(--f);background:#000;box-shadow:0 0 0 1px rgba(0,0,0,.35),0 30px 54px -22px rgba(0,0,0,.85)}
 .kr-affiche canvas{display:block;width:100%;height:100%}
 .kr-reglages{position:absolute;top:8px;right:8px;z-index:2;display:grid;gap:6px;width:min(230px,80%);padding:10px 12px;background:rgba(15,15,15,.88);color:#fff;border-radius:6px;font:600 12px/1.25 Archivo,sans-serif}
+.kr-reglages[hidden]{display:none}
 .kr-reglages summary{cursor:pointer}
 .kr-reglages:not([open]){width:auto}
 .kr-reglages label{display:grid;gap:2px}
@@ -191,14 +192,14 @@ export default {
     const R = { ...DEFAUT }; faireLUT(R);
     zone.innerHTML = `
       <div class="kr">
-        <div class="kr-affiche"><canvas data-export aria-label="Ton image : un visage en noir et blanc, ta phrase collée dessus"></canvas>${REGLAGES ? `
-          <details class="kr-reglages" open><summary>Réglages du noir et blanc</summary>
+        <div class="kr-affiche"><canvas data-export aria-label="Ton image : un visage en noir et blanc, ta phrase collée dessus"></canvas>`
+          <details class="kr-reglages" open${REGLAGES ? '' : ' hidden'}><summary>Réglages du noir et blanc</summary>
             <label>Douceur du passage noir / blanc <span data-v="douceur"></span><input type="range" data-r="douceur" min="6" max="60" step="1"></label>
             <label>Milieu (plus haut = plus sombre) <span data-v="milieu"></span><input type="range" data-r="milieu" min="70" max="190" step="1"></label>
             <label>Grain <span data-v="grain"></span><input type="range" data-r="grain" min="0" max="1" step="0.01"></label>
             <label>Taille du grain <span data-v="taille"></span><input type="range" data-r="taille" min="1" max="5" step="0.5"></label>
             <button type="button" data-copier>Copier les réglages</button>
-          </details>` : ''}</div>
+          </details>`}</div>
         <div class="kr-cote">
           ${ref ? `<img class="kr-ref" src="${ctx.racine}img/k/${ref.f}" alt="L’œuvre de Barbara Kruger, 1981">` : ''}
           <div class="kr-groupe"><p class="etiquette" aria-live="polite" data-info></p>
@@ -227,7 +228,7 @@ export default {
     let compo = 0, flux = null, raf = 0, vivant = true;
     let source = null;         // { el, w, h, miroir, visage } : la photo sous la phrase (hors direct)
     let detecteur = null, chargement = null, visage = null, rect = null, vu = 0, mode = 'VIDEO';
-    let L = 0, H = 0;
+    let L = 0, H = 0; const fins = [];
 
     const MESSAGES = {
       oeuvre: 'L’œuvre d’origine. Allume la caméra pour prendre sa place.',
@@ -403,8 +404,8 @@ export default {
     }
     addEventListener('keydown', touche);
 
-    /* réglages du noir et blanc (?reglages) */
-    if (REGLAGES) {
+    /* réglages du noir et blanc : visibles avec ?reglages dans l'adresse, ou touche R dans l'atelier */
+    {
       const pan = q('.kr-reglages');
       const maj = () => pan.querySelectorAll('[data-r]').forEach(i => { i.value = R[i.dataset.r]; pan.querySelector(`[data-v="${i.dataset.r}"]`).textContent = ': ' + R[i.dataset.r]; });
       pan.addEventListener('input', e => {
@@ -417,12 +418,18 @@ export default {
         navigator.clipboard?.writeText(t).then(() => { e.target.textContent = 'Copié'; }, () => prompt('Copie ce texte :', t));
       });
       maj();
+      const basculer = e => {
+        if (e.key !== 'r' && e.key !== 'R' || e.metaKey || e.ctrlKey || e.altKey) return;
+        if (e.target instanceof Element && e.target.closest('input,textarea,select')) return;
+        e.preventDefault(); pan.hidden = !pan.hidden; if (!pan.hidden) pan.open = true;
+      };
+      addEventListener('keydown', basculer); fins.push(() => removeEventListener('keydown', basculer));
     }
 
     formater(); majOeuvres(); passer('silhouette');
     if (origine) { origine.onload = () => { if (vivant && etat === 'silhouette') passer('oeuvre'); }; origine.src = ctx.racine + 'img/k/' + ref.f; }
     document.fonts.load(POLICE).then(() => { if (vivant && etat !== 'direct') peindre(); }).catch(() => {});
 
-    return () => { vivant = false; eteindre(); removeEventListener('keydown', touche); detecteur?.close?.(); };
+    return () => { vivant = false; eteindre(); removeEventListener('keydown', touche); fins.forEach(f => f()); detecteur?.close?.(); };
   },
 };
