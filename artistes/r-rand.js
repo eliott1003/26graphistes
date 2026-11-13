@@ -7,7 +7,7 @@
 // Quand un logo arrive : le ranger dans img/r/ (SVG de préférence, fond transparent ou blanc) et ajouter son nom de fichier
 // dans RECUS ci-dessous. Exemple : const RECUS = { ibm: 'ibm.svg', ups: 'ups.svg' };
 
-const RECUS = {}; // id du logo → nom du fichier dans img/r/
+const RECUS = { ibm: 'ibm.png', westinghouse: 'westinghouse.png', ups: 'ups.png', abc: 'abc.png', cummins: 'cummins.png', next: 'next.png', morningstar: 'morningstar.png' }; // id du logo → nom du fichier dans img/r/
 const LOGOS = [
   { id: 'ibm', client: 'IBM', an: '1956', idee: 'Trois lettres égyptiennes, massives et stables. En 1972, Rand les raye de bandes horizontales : le logo devient plus léger et fait penser à la vitesse.' },
   { id: 'westinghouse', client: 'Westinghouse', an: '1960', idee: 'Un W fait de points et de traits, dans un cercle : on y lit un circuit électrique, et presque un visage.' },
