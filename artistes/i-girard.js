@@ -2,12 +2,15 @@
 // Un seul carré au centre : les 80 soleils y défilent vite ; ils s'arrêtent sur celui qu'on survole.
 //
 // Les soleils sont découpés dans l'image fournie par Eliott (img/i/ref.jpg, première image de l'artiste dans
-// labo/donnees.js) : rien n'est redessiné en code, l'œuvre est encore protégée. La découpe se règle avec GRILLE.
+// labo/donnees.js) : rien n'est redessiné en code, l'œuvre est encore protégée.
+// CASES = le carré de chaque soleil, relevé le 13/11 sur l'image d'Eliott (1440 × 1108 px, 10 colonnes × 8 rangs,
+// numérotés de 1 à 80 comme sur la planche). Si l'image est remplacée par une plus grande aux mêmes proportions, rien à changer.
+// L'image est petite (un soleil = 110 px) : agrandi, c'est un peu flou. Une image plus grande arrangerait ça.
 //
-// PROVISOIRE tant que l'image manque : l'atelier tourne avec 80 soleils géométriques de remplacement, tirés au sort.
-// Ce ne sont PAS les soleils de Girard ; l'atelier le dit à l'écran.
+// Si l'image ne se charge pas : 80 soleils géométriques de remplacement, et l'atelier le dit à l'écran.
 
-const GRILLE = { colonnes: 8, lignes: 10, gauche: 0, haut: 0, droite: 0, bas: 0, joint: 0 }; // marges et joint en fraction de l'image : à caler sur l'image reçue
+const IMAGE = [1440, 1108];
+const CASES = [[102,56,108,108],[228,57,106,106],[355,56,106,108],[479,57,110,108],[601,60,111,103],[731,59,106,107],[855,57,108,108],[984,57,108,108],[1111,57,108,108],[1237,57,108,108],[101,183,108,108],[226,182,108,108],[349,182,114,107],[478,182,109,109],[601,182,110,109],[731,183,106,106],[856,183,107,107],[980,183,108,108],[1106,183,111,108],[1231,182,112,109],[100,306,109,108],[228,309,104,105],[352,307,108,108],[479,308,106,106],[604,308,108,109],[732,309,108,108],[856,309,106,107],[981,308,109,110],[1109,309,106,106],[1233,307,111,108],[100,433,108,108],[225,433,108,109],[351,433,108,109],[476,433,110,110],[603,433,109,110],[729,434,108,108],[857,435,107,109],[982,435,108,108],[1109,434,109,110],[1237,435,108,105],[101,561,108,108],[227,561,108,108],[352,560,108,108],[476,559,110,111],[604,560,109,108],[732,562,104,104],[858,561,108,108],[982,561,108,108],[1110,561,106,106],[1235,559,111,110],[97,684,109,111],[225,685,109,109],[354,687,103,106],[478,685,108,109],[607,687,103,105],[729,685,109,111],[856,685,109,110],[982,685,109,110],[1109,685,110,109],[1236,683,108,112],[101,814,108,108],[227,815,104,104],[351,813,109,112],[480,814,108,108],[603,813,112,112],[727,814,111,106],[858,814,108,108],[984,813,108,112],[1111,812,110,113],[1237,814,108,108],[101,940,108,108],[227,940,108,108],[353,940,108,108],[480,940,108,108],[606,940,108,108],[732,940,108,108],[858,940,108,108],[984,940,108,108],[1111,940,108,108],[1237,940,108,108]]; // [x, y, largeur, hauteur] en pixels de l'image
 const CADENCE = 13; // soleils par seconde
 
 // soleils de remplacement : un disque et des rayons, rien de plus
@@ -51,18 +54,17 @@ export default {
           <p class="gi-num" aria-live="off"></p>
           <p class="etiquette" aria-live="polite"></p>
           <p class="note">Pose la souris sur le carré : le défilé s’arrête sur un soleil. Retire-la : il repart. Au doigt ou avec Espace : arrêter, relancer.</p>
-          <p class="note" data-provisoire hidden>Version provisoire : soleils de remplacement, en attendant l’image de la planche d’Alexander Girard.</p>
+          <p class="note" data-provisoire hidden>L’image de la planche ne se charge pas : soleils de remplacement, ce ne sont pas ceux d’Alexander Girard.</p>
         </div>
       </div>`;
     const carre = zone.querySelector('.gi-carre'), cv = carre.querySelector('canvas'), x = cv.getContext('2d');
     const num = zone.querySelector('.gi-num'), info = zone.querySelector('.etiquette'), planche = zone.querySelector('.gi-planche'), repere = planche.querySelector('i');
-    const N = GRILLE.colonnes * GRILLE.lignes;
+    const N = CASES.length;
     let C = 0, dpr = 1, vivant = true, raf = 0, image = null, arret = false, dessus = false, i = 0, dernier = 0;
     const ordre = [...Array(N).keys()]; for (let k = N - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [ordre[k], ordre[j]] = [ordre[j], ordre[k]]; }
 
     function caseDe(k) { // rectangle du soleil k dans l'image, en fractions
-      const g = GRILLE, l = (1 - g.gauche - g.droite) / g.colonnes, h = (1 - g.haut - g.bas) / g.lignes, col = k % g.colonnes, lig = Math.floor(k / g.colonnes);
-      return [g.gauche + col * l + g.joint, g.haut + lig * h + g.joint, l - 2 * g.joint, h - 2 * g.joint];
+      const [cx, cy, cl, ch] = CASES[k]; return [cx / IMAGE[0], cy / IMAGE[1], cl / IMAGE[0], ch / IMAGE[1]];
     }
     function mesurer() { const r = carre.getBoundingClientRect(); if (!r.width) return; dpr = Math.min(devicePixelRatio || 1, 2); C = r.width; cv.width = cv.height = Math.round(C * dpr); dessiner(); }
     function dessiner() {

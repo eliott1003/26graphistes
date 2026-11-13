@@ -3,16 +3,18 @@
 // On tape un mot en français : il est traduit en direct (service gratuit MyMemory), avec un dictionnaire de secours
 // (DICO, plus bas) pour que ça marche toujours en présentation, même sans réseau.
 //
-// PROVISOIRE (13/11) : construit sans image de référence. Couleurs, corps et décalages sont à caler quand Eliott
-// envoie une photo de la signalétique (img/u/ref.jpg). Police : DIN du Mac (« DIN Alternate »), sinon Barlow Semi Condensed.
-// Rien n'est recopié d'un panneau existant : c'est la méthode, appliquée au mot du visiteur.
+// Calé le 13/11 sur l'image d'Eliott (img/u/ref.jpg, la surface en couleurs) : le mot dans chaque langue est répété
+// en lignes serrées, en jaune, bleu, rouge et vert, capitale initiale, DIN étroit ; les lignes se recouvrent.
+// Police : DIN étroit du Mac (« DIN Condensed »), sinon Barlow Semi Condensed.
+// Rien n'est recopié de la surface d'origine : c'est la méthode, appliquée au mot du visiteur.
 
 const LANGUES = [['en', 'anglais'], ['de', 'allemand'], ['es', 'espagnol'], ['it', 'italien'], ['pt', 'portugais'], ['nl', 'néerlandais'], ['ja', 'japonais'], ['ar', 'arabe']];
-const COULEURS = [['jaune', '#ffd200', '#b98f00'], ['rouge', '#e2231a', '#8e0f0a'], ['vert', '#00a651', '#006330'], ['bleu', '#0072bc', '#00406e']]; // nom, fond, ton du voile
+const COULEURS = [['jaune', '#f7e400'], ['bleu', '#1f62b5'], ['rouge', '#c8102e'], ['vert', '#93a52c']]; // relevées sur l'image
 const LIEUX = ['musée', 'cinéma', 'bibliothèque', 'librairie', 'forum', 'spectacle'];
-const POLICE = '"DIN Alternate","DIN 2014","Bahnschrift","Barlow SC",Archivo,sans-serif';
-// place de chaque langue dans le voile : décalage (en fraction de la largeur et de la hauteur) et part du mouvement de la souris
-const PLACES = [[-.035, -.19, -1], [.03, -.125, .8], [-.02, -.06, -.6], [.045, .0, .45], [-.05, .055, -.35], [.02, .115, .65], [-.01, .175, -.85], [.04, .225, 1]];
+const POLICE = '"DIN Condensed","DIN Alternate","Bahnschrift","Barlow SC",Archivo,sans-serif';
+// chaque langue : corps (fraction de la hauteur), décalage de départ, décalage d'un rang au suivant, part du mouvement de la souris
+const PLACES = [[.1, .0, .37, -1], [.085, .31, .61, .8], [.095, .62, .23, -.6], [.08, .17, .79, .45], [.1, .48, .52, -.35], [.085, .83, .13, .65], [.11, .07, .68, -.85], [.09, .55, .41, 1]];
+const maj = t => t.charAt(0).toLocaleUpperCase() + t.slice(1);
 
 // Dictionnaire de secours : anglais, allemand, espagnol, italien, portugais, néerlandais, japonais, arabe.
 const DICO = {
@@ -80,9 +82,9 @@ export default {
 .ba-bas{display:grid;gap:8px;width:min(100cqw,calc((100cqh - 150px)*1.6))}
 .ba-ligne{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .ba-ligne p{margin:0}
-.ba-saisie{flex:1 1 180px;min-width:0;min-height:42px;padding:6px 12px;border:1.5px solid currentColor;border-radius:4px;background:transparent;color:inherit;font:600 20px/1 ${POLICE};text-transform:lowercase}
+.ba-saisie{flex:1 1 180px;min-width:0;min-height:42px;padding:6px 12px;border:1.5px solid currentColor;border-radius:4px;background:transparent;color:inherit;font:700 22px/1 ${POLICE}}
 .ba-saisie::placeholder{color:inherit;opacity:.5}
-.ba-lieux .bouton{min-height:36px;padding:6px 12px;text-transform:lowercase}
+.ba-lieux .bouton{min-height:36px;padding:6px 12px;text-transform:capitalize}
 .ba-pastille{width:36px;height:36px;border-radius:50%;border:2px solid currentColor;padding:0;cursor:pointer}
 .ba-pastille[aria-pressed=true]{outline:2.5px solid currentColor;outline-offset:3px}
 @media (max-width:760px){.ba{height:auto}.ba-panneau,.ba-bas{width:100%}}
@@ -107,47 +109,49 @@ export default {
 
     function mesurer() { const r = panneau.getBoundingClientRect(); if (!r.width) return; dpr = Math.min(devicePixelRatio || 1, 2); L = r.width; H = r.height; cv.width = Math.round(L * dpr); cv.height = Math.round(H * dpr); lancer(); }
     // corps tel que le mot tienne dans la largeur, sans dépasser un corps maximal
-    function corps(texte, max, larg) { x.font = `600 100px ${POLICE}`; const w = x.measureText(texte).width || 1; return Math.min(max, 100 * larg / w); }
+    function corps(texte, max, larg) { x.font = `700 100px ${POLICE}`; const w = x.measureText(texte).width || 1; return Math.min(max, 100 * larg / w); }
     function dessiner(t) {
       if (!L) return false;
-      const [, fond, ton] = COULEURS[coul]; let encore = false;
+      let encore = false;
       souris.cx += (souris.x - souris.cx) * .12; souris.cy += (souris.y - souris.cy) * .12;
       if (Math.abs(souris.x - souris.cx) + Math.abs(souris.y - souris.cy) > .002) encore = true;
-      x.setTransform(dpr, 0, 0, dpr, 0, 0); x.globalCompositeOperation = 'source-over'; x.globalAlpha = 1;
-      x.fillStyle = fond; x.fillRect(0, 0, L, H);
-      x.textAlign = 'center'; x.textBaseline = 'middle';
-      // le voile : chaque langue dans le ton du fond, en « produit » ; là où les mots se recouvrent, ça fonce
-      x.globalCompositeOperation = 'multiply'; x.fillStyle = ton;
+      x.setTransform(dpr, 0, 0, dpr, 0, 0); x.globalAlpha = 1;
+      x.fillStyle = COULEURS[coul][1]; x.fillRect(0, 0, L, H);
+      x.save(); x.beginPath(); x.rect(0, 0, L, H); x.clip();
+      x.textAlign = 'left'; x.textBaseline = 'alphabetic';
+      // le voile : chaque langue répétée en rangs serrés, dans une des quatre couleurs ; les rangs se recouvrent
       couches.forEach(c => {
         const p = ctx.reduireMouvement ? 1 : Math.min(1, (t - c.t0) / 520); if (p < 1) encore = true; if (p <= 0) return;
-        const e = 1 - Math.pow(1 - p, 3), [dx, dy, k] = PLACES[c.i];
-        const cx = L * (.5 + dx + souris.cx * k * .17) + (1 - e) * L * .5 * Math.sign(k), cy = H * (.47 + dy + souris.cy * k * .1);
-        x.globalAlpha = .5 * e; x.direction = c.l === 'ar' ? 'rtl' : 'ltr';
-        x.font = `600 ${corps(c.texte, H * .3, L * .9)}px ${POLICE}`; x.fillText(c.texte, cx, cy);
+        const e = 1 - Math.pow(1 - p, 3), [k, dy, glisse, part] = PLACES[c.i], corps = H * k, rang = corps * 1.55;
+        x.font = `700 ${corps}px ${POLICE}`; x.direction = c.l === 'ar' ? 'rtl' : 'ltr';
+        const pas = x.measureText(c.texte).width + corps * .32;
+        const ox = souris.cx * part * L * .06 + (1 - e) * L * .35 * Math.sign(part), oy = dy * rang + souris.cy * part * H * .05;
+        x.globalAlpha = e; x.fillStyle = COULEURS[(c.i + coul + 1) % 4][1];
+        for (let r = -1, y = oy - rang; y < H + corps; r++, y += rang) {
+          let px = ((ox + r * glisse * pas) % pas + pas) % pas - pas;
+          for (; px < L + pas; px += pas) x.fillText(c.texte, c.l === 'ar' ? px + pas : px, y);
+        }
       });
+      x.restore();
       // le mot français, lisible, en blanc
-      x.globalCompositeOperation = 'source-over'; x.globalAlpha = 1; x.direction = 'ltr'; x.fillStyle = '#fff';
-      const fr = mot.toLocaleLowerCase('fr') || ' ';
-      x.font = `600 ${corps(fr, H * .3, L * .84)}px ${POLICE}`; x.fillText(fr, L * .5, H * .47);
-      // la ligne du bas : les langues du voile
-      x.textAlign = 'left'; x.textBaseline = 'alphabetic'; x.font = `600 ${Math.max(9, H * .03)}px ${POLICE}`; x.globalAlpha = .85;
-      x.fillText(['français', ...couches.map(c => c.nom)].join('  ·  '), L * .04, H * .945);
-      x.globalAlpha = 1;
+      x.globalAlpha = 1; x.direction = 'ltr'; x.fillStyle = '#fff'; x.textAlign = 'center'; x.textBaseline = 'middle';
+      const fr = maj(mot.toLocaleLowerCase('fr')) || ' ';
+      x.font = `700 ${corps(fr, H * .42, L * .84)}px ${POLICE}`; x.fillText(fr, L * .5, H * .52);
       return encore;
     }
     function lancer() { cancelAnimationFrame(raf); const pas = t => { if (!vivant) return; if (dessiner(t)) raf = requestAnimationFrame(pas); }; raf = requestAnimationFrame(pas); }
-    const poser = (i, texte) => { couches.push({ i, l: LANGUES[i][0], nom: LANGUES[i][1], texte: texte.toLocaleLowerCase(), t0: performance.now() + couches.length * 70 }); lancer(); };
+    const poser = (i, texte) => { couches.push({ i, l: LANGUES[i][0], nom: LANGUES[i][1], texte: maj(texte.toLocaleLowerCase()), t0: performance.now() + couches.length * 70 }); lancer(); };
 
     async function composer(nouveau) {
       mot = nouveau.trim().slice(0, 22); const moi = ++tour; couches = []; lancer();
       if (!mot) { info.textContent = 'Écris un mot, ou choisis un lieu.'; return; }
       const sec = duDico(mot);
-      if (sec) { sec.forEach((t, i) => poser(i, t)); info.textContent = `« ${mot} » en ${LANGUES.length} langues. Promène la souris sur le panneau : le voile se défait.`; return; }
+      if (sec) { sec.forEach((t, i) => poser(i, t)); info.textContent = `« ${mot} » en ${LANGUES.length} langues : ${LANGUES.map(l => l[1]).join(', ')}. Promène la souris sur le panneau.`; return; }
       info.textContent = `Traduction de « ${mot} »…`;
       let recus = 0;
       await Promise.all(LANGUES.map(async ([l], i) => { const t = await traduire(mot, l); if (moi !== tour || !t) return; recus++; poser(i, t); }));
       if (moi !== tour) return;
-      info.textContent = recus ? `« ${mot} » en ${recus} langue${recus > 1 ? 's' : ''}. Promène la souris sur le panneau : le voile se défait.`
+      info.textContent = recus ? `« ${mot} » en ${recus} langue${recus > 1 ? 's' : ''}. Promène la souris sur le panneau.`
         : `Pas de traduction en ligne pour « ${mot} ». Essaie un lieu ci-dessus, ou un mot simple (soleil, livre, bonjour).`;
     }
     const plusTard = () => { clearTimeout(attente); attente = setTimeout(() => composer(saisie.value), 420); };
