@@ -7,20 +7,14 @@
 // Les œuvres ne sont pas redessinées ici (protégées) : la référence de chaque variante est montrée à côté de la feuille.
 // Webcam : l'index dirige, pincer pouce et index pose (ou trace, pour l'éventail) ; taper dans ses mains efface tout.
 // Si la caméra ou le modèle manquent, la souris reste. Le modèle de suivi des mains se charge chez Google au premier clic.
-// Valeurs : dans REG ci-dessous. Pour les choisir, ajouter ?reglages à l'adresse : un panneau de curseurs apparaît, avec « Copier les réglages ».
 
 const NOIR = '#0c0c0c', BLANC = '#fbfaf6', PAPIER = '#e8e7e3';
 const PAS = .008, BANDES = 13;          // pas de la tête (largeurs de feuille) ; 7 rayures blanches, 6 noires dans le ruban
 const URL_MAINS = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
-const REG = {                             // valeurs figées (à remplacer par celles qu'Eliott choisit dans ?reglages)
+const REG = {                             // valeurs figées
   eventail: { taille: .145, ecart: .1 },                       // choisies par Eliott le 13/11 à 3 h 14
   onde: { petit: .115, grand: .395, souris: .26, torsion: 2.15 },
   ruban: { largeur: .27, longueur: 3.95 },
-};
-const CURSEURS = {
-  eventail: [['taille', 'Taille des carrés', .05, .3, .005], ['ecart', 'Écart entre les carrés', .04, .3, .005]],
-  onde: [['petit', 'Tourbillon, main fermée', .03, .4, .005], ['grand', 'Tourbillon, main ouverte', .1, .9, .005], ['souris', 'Tourbillon à la souris', .05, .6, .005], ['torsion', 'Torsion', -4, 4, .05]],
-  ruban: [['largeur', 'Largeur du ruban', .08, .5, .005], ['longueur', 'Longueur du ruban', .6, 6, .05]],
 };
 const MODES = {
   eventail: { r: 2323 / 1599, img: 4, nom: 'Éventail',
@@ -122,16 +116,11 @@ export default {
 .gr-ref video{height:clamp(56px,13cqh,110px);width:auto;transform:scaleX(-1);box-shadow:0 0 0 1px rgba(255,255,255,.3)}
 .gr-boutons{display:flex;flex-wrap:wrap;gap:6px}
 .gr-boutons .bouton{padding:6px 12px;min-height:38px}
-.gr-reg{display:grid;gap:6px;padding:10px;border:1.5px dashed currentColor;border-radius:6px;font:500 12px/1.3 "DM Mono",ui-monospace,monospace}
-.gr-reg label{display:grid;grid-template-columns:1fr auto;gap:2px 8px}
-.gr-reg input{grid-column:1/-1;accent-color:#fff;width:100%}
-.gr-reg button{justify-self:start}
 @media (max-width:760px){.gr{grid-template-columns:1fr;height:auto}.gr-affiche{width:100%}.gr-cote{max-height:none}}
 `,
   monter(zone, ctx) {
     const IM = ctx.artiste.images || [], R = ctx.reduireMouvement;
-    const chantier = new URLSearchParams(location.search).has('reglages');
-    const V = JSON.parse(JSON.stringify(REG));                          // valeurs en cours (modifiables seulement dans ?reglages)
+    const V = JSON.parse(JSON.stringify(REG));                          // valeurs en cours 
     zone.innerHTML = `
       <div class="gr">
         <div class="gr-affiche"><canvas data-export aria-label="La feuille de l’atelier Grignani"></canvas></div>
@@ -145,12 +134,11 @@ export default {
             <button type="button" class="bouton" data-annuler>Retirer le dernier</button>
             <button type="button" class="bouton" data-vider>Tout effacer</button>
           </div>
-          <div class="gr-reg" ${chantier ? '' : 'hidden'}></div>
         </div>
       </div>`;
     const $ = s => zone.querySelector(s);
     const affiche = $('.gr-affiche'), cv = affiche.querySelector('canvas'), x = cv.getContext('2d'), fond = document.createElement('canvas');
-    const info = $('.etiquette'), bMain = $('[data-main]'), video = $('video'), refImg = $('.gr-ref img'), panneau = $('.gr-reg');
+    const info = $('.etiquette'), bMain = $('[data-main]'), video = $('video'), refImg = $('.gr-ref img');
     let mode = 'eventail', L = 0, dpr = 1, vivant = true, raf = 0, sale = true, cible = null;
     const H = () => 1 / MODES[mode].r;
     const E = {
@@ -264,28 +252,8 @@ export default {
       const im = IM[d.img] || IM[0];
       if (im) { refImg.src = `${ctx.racine}img/g/${im.f}`; refImg.alt = im.t; refImg.title = im.t; refImg.hidden = false; } else refImg.hidden = true;
       affiche.style.setProperty('--gr-r', d.r.toFixed(4)); cible = null; E.onde.vif = null;
-      L = 0; mesurer(); dire(); panneauReglages();
+      L = 0; mesurer(); dire();
     }
-
-    /* ── panneau de réglages (seulement avec ?reglages dans l'adresse) ── */
-    function panneauReglages() {
-      if (!chantier) return;
-      panneau.innerHTML = `<strong>Réglages · ${MODES[mode].nom}</strong>` +
-        CURSEURS[mode].map(([k, nom, a, b, p]) => `<label>${nom}<output data-o="${k}">${V[mode][k]}</output><input type="range" data-k="${k}" min="${a}" max="${b}" step="${p}" value="${V[mode][k]}"></label>`).join('') +
-        (mode === 'onde' ? `<span data-ouv>Ouverture de la main : –</span>` : '') +
-        `<button type="button" class="bouton" data-copier>Copier les réglages</button><span data-ok></span>`;
-    }
-    panneau.addEventListener('input', e => {
-      const k = e.target.dataset.k; if (!k) return;
-      V[mode][k] = +e.target.value; panneau.querySelector(`[data-o="${k}"]`).textContent = e.target.value;
-      if (mode === 'ruban') E.ruban.libre.larg = V.ruban.largeur;
-      sale = true;
-    });
-    panneau.addEventListener('click', e => {
-      if (!e.target.closest('[data-copier]')) return;
-      const texte = `Réglages Grignani : ${Object.entries(V).map(([m, o]) => `${m} { ${Object.entries(o).map(([k, v]) => `${k}: ${v}`).join(', ')} }`).join(' ; ')}`;
-      navigator.clipboard?.writeText(texte).then(() => { panneau.querySelector('[data-ok]').textContent = 'Copié'; }, () => prompt('Copie ce texte :', texte));
-    });
 
     /* ── souris ── */
     const ou = e => { const r = affiche.getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width, y: (e.clientY - r.top) / r.width }; };
@@ -331,7 +299,6 @@ export default {
       // ouverture de la main : distance moyenne du bout des quatre doigts au poignet, rapportée à la paume (poing ≈ 1, main ouverte ≈ 2)
       const ouv = borne(([8, 12, 16, 20].reduce((t, i) => t + d2(m[i], m[0]), 0) / 4 / paume - 1.15) / .75, 0, 1);
       main.ouverture += (ouv - main.ouverture) * .35;
-      if (chantier && mode === 'onde') { const o = panneau.querySelector('[data-ouv]'); if (o) o.textContent = `Ouverture de la main : ${Math.round(main.ouverture * 100)} %`; }
       // pincement mesuré par rapport à la taille de la main, avec une marge pour ne pas clignoter
       const ecart = d2(m[4], m[8]) / paume;
       main.compte = ecart < .3 ? main.compte + 1 : 0;
