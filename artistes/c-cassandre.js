@@ -9,7 +9,7 @@
 // À fournir par Eliott : c-ref.jpg (le triptyque en largeur), et si possible les neuf étapes.
 
 const MOT = 'DUBONNET';
-const ETAPES = 0;                        // mettre 9 quand img/c/etape-0.jpg … etape-8.jpg sont dans le dépôt
+const ETAPES = 9;                        // img/c/etape-0.jpg … etape-8.jpg (images d'Eliott, 1200 × 1600 ; PROVISOIRES le 13/11 à 3 h 40, les finales arrivent)
 const PANNEAUX = [0, 1 / 3, 2 / 3, 1];   // bords des trois panneaux dans img/c/ref.jpg, en part de la largeur (à caler sur l'image)
 const FAUSSE_LETTRE = 'rien';            // 'rien' : une fausse lettre ne change rien ; 'debut' : elle renvoie au début
 const PAPIER = '#efe2c4', NOIR = '#17130f';
@@ -41,6 +41,7 @@ export default {
 .cs-feuille .cs-ligne{font-size:15.6cqw;padding:2.3cqw 4.2cqw 1.1cqw;--k:${NOIR};--fd:${PAPIER}}
 .cs-feuille .cs-ligne + .cs-ligne{border-top:.28cqw solid ${NOIR}}
 .cs-image{display:block;max-width:100%;max-height:calc(100cqh - 250px);box-shadow:0 0 0 1px rgba(0,0,0,.25),0 26px 50px -30px rgba(0,0,0,.7)}
+.cs-etape{display:block;height:calc(100cqh - 96px);width:auto;max-width:100%;object-fit:contain;box-shadow:0 0 0 1px rgba(0,0,0,.25),0 26px 50px -30px rgba(0,0,0,.7)}
 .cs-trip{position:relative;max-width:100%;line-height:0;overflow:hidden;box-shadow:0 0 0 1px rgba(0,0,0,.25),0 26px 50px -30px rgba(0,0,0,.7)}
 .cs-trip .cs-image{box-shadow:none}
 .cs-cache{position:absolute;top:0;bottom:0;right:0;left:0;background:${PAPIER};transition:left .26s cubic-bezier(.6,0,.2,1)}
@@ -51,23 +52,23 @@ export default {
 .cs-bas p{margin:0}
 .cs-bas .note{max-width:52ch}
 .cs-boutons{display:flex;flex-wrap:wrap;gap:8px}
-@media (max-width:760px){.cs{height:auto}.cs-feuille{width:100%}.cs-image{max-height:none}.cs-mot{font-size:11vw}}
+@media (max-width:760px){.cs{height:auto}.cs-feuille{width:100%}.cs-image{max-height:none}.cs-etape{height:auto;width:100%}.cs-mot{font-size:11vw}}
 @media (prefers-reduced-motion:reduce){.cs-cache{transition:none}.cs.non .cs-affiche > :not(.cs-saisie){animation:none}}
 `,
   monter(zone, ctx) {
     const ref = ctx.artiste.images?.[0], dossier = ctx.racine + 'img/c/';
     const mode = ETAPES === MOT.length + 1 ? 1 : ref ? 2 : 3;
-    const affiche = mode === 1 ? `<img class="cs-image" data-etape alt="">`
+    const affiche = mode === 1 ? `<img class="cs-etape" data-etape alt="">`
       : mode === 2 ? `<div class="cs-trip"><img class="cs-image" src="${dossier}${ref.f}" alt="Dubo, Dubon, Dubonnet, affiche d’A.M. Cassandre, 1932"><div class="cs-cache"></div></div>`
       : `<div class="cs-feuille">${LIGNES.map(() => ligne('')).join('')}</div>`;
     const notes = {
-      1: 'Tape les huit lettres dans l’ordre : une image par lettre, jusqu’à l’affiche. Retour arrière : une lettre en moins.',
+      1: 'Tape les huit lettres dans l’ordre : à chaque lettre, le buveur se remplit un peu plus, comme sur la série de 1932. Retour arrière : une lettre en moins.',
       2: 'Tape les huit lettres dans l’ordre : l’affiche se découvre, DUBO, puis DUBON, puis DUBONNET. Retour arrière : une lettre en moins.',
       3: 'Sur l’affiche, le mot se remplit en trois temps, comme le buveur : DUBO, DUBON, DUBONNET. Tape les huit lettres dans l’ordre. Retour arrière : une lettre en moins.',
     };
     zone.innerHTML = `
       <div class="cs">
-        <div class="cs-affiche">${affiche}${mode === 3 ? '' : ligne('cs-mot')}
+        <div class="cs-affiche">${affiche}${mode === 2 ? ligne('cs-mot') : ''}
           <input class="cs-saisie" type="text" aria-label="Tape D, U, B, O, N, N, E, T" autocomplete="off" autocapitalize="characters" spellcheck="false"></div>
         <div class="cs-bas">
           <p class="etiquette" aria-live="polite"></p>
