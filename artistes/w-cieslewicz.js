@@ -12,17 +12,26 @@
 
 const URL_VISAGE = 'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite';
 const SORTIE = { w: 720, h: 960 }, TRAVAIL = { w: 180, h: 240 }; // l'image finale, et la petite image où l'on recolle l'œil
-const YEUX = { y: .42, ecart: 1 / 3.3 };   // dans l'image de travail : hauteur de la ligne des yeux, écart entre eux (fraction de la largeur)
+// Réglages de l'effet. Valeurs figées ici ; la page reglages-w.html permet de les essayer en direct. Elle les garde dans le
+// navigateur (localStorage « reglages-w »), et l'atelier les reprend sur cet ordinateur-là. « Copier » donne de quoi les figer ici.
+export const DEFAUT = {
+  yeuxY: .42, yeuxEcart: 1 / 3.3,               // cadrage : hauteur de la ligne des yeux, écart entre eux (fraction de la largeur)
+  pas: 8.5, angle: 45, force: 1.3, seuil: .07, point: .74, // trame : maille (px), angle (°), contraste, seuil des clairs, taille max du point
+  oeil: 1, oeilY: -.03,                          // l'œil du milieu : taille, décalage vertical
+  joue: .72, joueTaille: 1,                      // la pièce de joue qui efface les yeux : d'où on la prend (vers le bas), sa taille
+  papier: '#e4e2dc', encre: '#121212',
+};
+export const REGLAGES = { ...DEFAUT };
+export const lireReglages = () => { try { Object.assign(REGLAGES, DEFAUT, JSON.parse(localStorage.getItem('reglages-w') || '{}')); } catch {} return REGLAGES; };
+const R = REGLAGES;
 const REPERE = { y: .42, ecart: .17 };     // sans détection : où placer ses yeux dans le retour caméra (fractions de la hauteur)
-const TRAME = { pas: 8.5, angle: Math.PI / 4, force: 1.3, seuil: .07 }; // gros points à 45°
-const PAPIER = '#e4e2dc', ENCRE = '#121212';
 const charger = src => new Promise((ok, non) => { const im = new Image(); im.onload = () => ok(im); im.onerror = non; im.src = src; });
 
 export default {
   lettre: 'W',
   css: `
 .cz{display:grid;grid-template-columns:auto minmax(170px,230px);gap:clamp(14px,2.4cqw,36px);justify-content:center;align-items:end;height:100cqh}
-.cz-feuille{height:min(100cqh,calc((100cqw - 270px)*4/3));aspect-ratio:3/4;background:${PAPIER};box-shadow:0 26px 50px -30px rgba(0,0,0,.6)}
+.cz-feuille{height:min(100cqh,calc((100cqw - 270px)*4/3));aspect-ratio:3/4;background:#e4e2dc;box-shadow:0 26px 50px -30px rgba(0,0,0,.6)}
 .cz-feuille canvas{display:block;width:100%;height:100%}
 .cz-cote{display:grid;gap:12px;align-content:end;padding-bottom:4px}
 .cz-cote p{margin:0}
@@ -34,6 +43,7 @@ export default {
 @media (max-width:760px){.cz{grid-template-columns:1fr;height:auto}.cz-feuille{height:auto;width:100%}}
 `,
   monter(zone, ctx) {
+    lireReglages();
     zone.innerHTML = `
       <div class="cz">
         <div class="cz-feuille"><canvas data-export width="${SORTIE.w}" height="${SORTIE.h}" aria-label="Un visage tramé en noir et blanc, avec un seul œil au milieu"></canvas></div>
@@ -57,15 +67,15 @@ export default {
 
     /* ── la trame : un point par maille, d'autant plus gros que l'image est sombre ── */
     function tramer() {
-      const d = ga.getImageData(0, 0, TRAVAIL.w, TRAVAIL.h).data, k = TRAVAIL.w / SORTIE.w, { pas, angle, force, seuil } = TRAME, c = Math.cos(angle), s = Math.sin(angle);
-      x.fillStyle = PAPIER; x.fillRect(0, 0, SORTIE.w, SORTIE.h); x.fillStyle = ENCRE; x.beginPath();
+      const d = ga.getImageData(0, 0, TRAVAIL.w, TRAVAIL.h).data, k = TRAVAIL.w / SORTIE.w, { pas, force, seuil } = R, angle = R.angle * Math.PI / 180, c = Math.cos(angle), s = Math.sin(angle);
+      x.fillStyle = R.papier; x.fillRect(0, 0, SORTIE.w, SORTIE.h); x.fillStyle = R.encre; x.beginPath();
       const n = Math.ceil(Math.hypot(SORTIE.w, SORTIE.h) / pas / 2) + 1;
       for (let i = -n; i <= n; i++) for (let j = -n; j <= n; j++) {
         const px = SORTIE.w / 2 + (i * c - j * s) * pas, py = SORTIE.h / 2 + (i * s + j * c) * pas;
         if (px < -pas || py < -pas || px > SORTIE.w + pas || py > SORTIE.h + pas) continue;
         const sx = Math.min(TRAVAIL.w - 1, Math.max(0, Math.round(px * k))), sy = Math.min(TRAVAIL.h - 1, Math.max(0, Math.round(py * k))), o = (sy * TRAVAIL.w + sx) * 4;
         const sombre = Math.min(1, Math.max(0, (1 - (d[o] * .299 + d[o + 1] * .587 + d[o + 2] * .114) / 255) * force - seuil));
-        if (sombre < .02) continue; const r = pas * .74 * Math.sqrt(sombre);
+        if (sombre < .02) continue; const r = pas * R.point * Math.sqrt(sombre);
         x.moveTo(px + r, py); x.arc(px, py, r, 0, 6.2832);
       }
       x.fill();
@@ -79,17 +89,17 @@ export default {
     }
     /* ── le cyclope : la source est cadrée pour que les yeux tombent toujours au même endroit de l'image de travail ── */
     function cyclope(source, g, d, phi, miroir) { // g, d : les deux yeux dans la source, en pixels
-      const mx = (g.x + d.x) / 2, my = (g.y + d.y) / 2, ecart = Math.hypot(d.x - g.x, d.y - g.y) || 1, e = TRAVAIL.w * YEUX.ecart, k = e / ecart, y0 = TRAVAIL.h * YEUX.y;
+      const mx = (g.x + d.x) / 2, my = (g.y + d.y) / 2, ecart = Math.hypot(d.x - g.x, d.y - g.y) || 1, e = TRAVAIL.w * R.yeuxEcart, k = e / ecart, y0 = TRAVAIL.h * R.yeuxY;
       ga.setTransform(1, 0, 0, 1, 0, 0); ga.fillStyle = '#bbb'; ga.fillRect(0, 0, TRAVAIL.w, TRAVAIL.h);
       if (miroir) { ga.translate(TRAVAIL.w, 0); ga.scale(-1, 1); }
       ga.translate(TRAVAIL.w / 2, y0); ga.scale(k, k); ga.rotate(-phi); ga.translate(-mx, -my); ga.drawImage(source, 0, 0); ga.setTransform(1, 0, 0, 1, 0, 0);
       gb.drawImage(A, 0, 0);
       const cx = TRAVAIL.w / 2;
-      for (const ex of [cx - e / 2, cx + e / 2]) rapiecer(ex, y0 + e * .72, e * 1.05, e * .72, ex, y0 - e * .06, e * 1.2, e * .95); // la joue recouvre l'œil et le sourcil
-      rapiecer(cx + e / 2, y0, e * .95, e * .62, cx, y0 - e * .03, e * 1.25, e * .82);                                              // un œil, un peu agrandi, au milieu
+      for (const ex of [cx - e / 2, cx + e / 2]) rapiecer(ex, y0 + e * R.joue, e * 1.05, e * .72, ex, y0 - e * .06, e * 1.2 * R.joueTaille, e * .95 * R.joueTaille); // la joue recouvre l'œil et le sourcil
+      rapiecer(cx + e / 2, y0, e * .95, e * .62, cx, y0 + e * R.oeilY, e * 1.25 * R.oeil, e * .82 * R.oeil);                                              // un œil, un peu agrandi, au milieu
     }
     function cyclopeDessine() { // provisoire : un visage très simple, à un œil
-      const w = TRAVAIL.w, h = TRAVAIL.h, y0 = h * YEUX.y;
+      const w = TRAVAIL.w, h = TRAVAIL.h, y0 = h * R.yeuxY;
       ga.setTransform(1, 0, 0, 1, 0, 0); ga.fillStyle = '#d8d8d8'; ga.fillRect(0, 0, w, h);
       ga.fillStyle = '#3a3a3a'; ga.beginPath(); ga.ellipse(w / 2, h * .4, w * .43, h * .4, 0, 0, 7); ga.fill(); ga.fillRect(w * .07, h * .4, w * .86, h * .5);          // cheveux
       const peau = ga.createLinearGradient(w * .25, 0, w * .8, 0); peau.addColorStop(0, '#f4f4f4'); peau.addColorStop(1, '#a9a9a9');
@@ -101,7 +111,7 @@ export default {
       ga.fillStyle = '#333'; ga.beginPath(); ga.ellipse(w / 2, h * .68, w * .09, h * .013, 0, 0, 7); ga.fill();                                                          // bouche
     }
     function repli(message) {
-      if (origine) { x.fillStyle = PAPIER; x.fillRect(0, 0, SORTIE.w, SORTIE.h); const k = Math.min(SORTIE.w / origine.naturalWidth, SORTIE.h / origine.naturalHeight), w = origine.naturalWidth * k, h = origine.naturalHeight * k; x.drawImage(origine, (SORTIE.w - w) / 2, (SORTIE.h - h) / 2, w, h); }
+      if (origine) { x.fillStyle = R.papier; x.fillRect(0, 0, SORTIE.w, SORTIE.h); const k = Math.min(SORTIE.w / origine.naturalWidth, SORTIE.h / origine.naturalHeight), w = origine.naturalWidth * k, h = origine.naturalHeight * k; x.drawImage(origine, (SORTIE.w - w) / 2, (SORTIE.h - h) / 2, w, h); }
       else { cyclopeDessine(); tramer(); }
       provisoire.hidden = !!origine;
       info.textContent = message || (origine ? 'Caméra éteinte : voici l’affiche d’origine. Allume la caméra pour prendre sa place.' : 'Caméra éteinte. Allume-la : tes deux yeux n’en feront plus qu’un.');
@@ -162,6 +172,7 @@ export default {
     });
     bFiger.addEventListener('click', () => { fige = !fige; bFiger.textContent = fige ? 'Reprendre' : 'Figer'; if (fige) { info.textContent = 'Image figée : tu peux l’enregistrer.'; ctx.annoncer?.('Image figée'); } });
 
+    zone.redessiner = () => { if (!flux) repli(); else if (fige) tramer(); }; // la page de réglages l'appelle quand un curseur bouge
     repli();
     const im = ctx.artiste.images?.[0];
     if (im) charger(`${ctx.racine}img/w/${im.f}`).then(i => { if (!vivant) return; origine = i; if (!flux) repli(); }).catch(() => console.warn('Cieślewicz : affiche introuvable, cyclope provisoire'));

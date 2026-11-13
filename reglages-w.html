@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Réglages : Cieślewicz (W)</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="labo/commun.css">
+<link rel="stylesheet" href="site.css">
+<style>
+  body{margin:0;background:#2b2b2b;color:#f1ede4;font:15px/1.4 Archivo,system-ui,sans-serif}
+  .rg{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:28px;padding:24px;min-height:100vh;box-sizing:border-box}
+  .rg-zone{container-type:size;height:calc(100vh - 48px);min-height:520px;color:#f1ede4}
+  .rg-panneau{display:grid;gap:14px;align-content:start;overflow:auto;max-height:calc(100vh - 48px)}
+  h1{font:900 34px/.9 "Sofia Cond",Archivo,sans-serif;text-transform:uppercase;margin:0}
+  .rg-panneau p{margin:0;opacity:.8;font-size:13px}
+  fieldset{border:1px solid rgba(255,255,255,.2);padding:10px 12px;display:grid;gap:8px;margin:0}
+  legend{font-weight:700;padding:0 4px}
+  label{display:grid;grid-template-columns:120px 1fr 52px;gap:8px;align-items:center;font-size:13px}
+  label output{text-align:right;font-variant-numeric:tabular-nums}
+  input[type=range]{width:100%}
+  .rg-boutons{display:flex;flex-wrap:wrap;gap:8px}
+  .bouton{color:#f1ede4!important;background:transparent!important;border:1.5px solid #f1ede4!important;padding:9px 14px;border-radius:99px;font:600 14px Archivo,sans-serif;cursor:pointer}
+  .bouton.plein{background:#f1ede4!important;color:#111!important}
+  pre{background:#111;padding:10px;font-size:12px;white-space:pre-wrap;margin:0;user-select:all}
+</style>
+</head>
+<body>
+<div class="rg">
+  <div class="rg-zone" id="zone"></div>
+  <aside class="rg-panneau">
+    <h1>Réglages W<br>Cieślewicz</h1>
+    <p>Page pour toi seulement, pas dans le site. Allume la caméra dans l’atelier (ou choisis une photo de visage de face), puis règle. Les valeurs restent dans ce navigateur : l’atelier du site les reprend sur cet ordinateur.</p>
+    <div class="rg-boutons">
+      <label class="bouton" for="photo" style="display:inline-flex">Tester sur une photo</label>
+      <input id="photo" type="file" accept="image/*" hidden>
+    </div>
+    <div id="curseurs"></div>
+    <div class="rg-boutons">
+      <button type="button" class="bouton plein" id="copier">Copier les valeurs</button>
+      <button type="button" class="bouton" id="defaut">Valeurs de départ</button>
+    </div>
+    <pre id="sortie"></pre>
+  </aside>
+</div>
+<script type="module">
+import atelier, { REGLAGES, DEFAUT, lireReglages } from './artistes/w-cieslewicz.js';
+import { ARTISTES } from './labo/donnees.js';
+
+const GROUPES = [
+  ['Trame', [['pas', 'Maille (px)', 3, 24, .5], ['angle', 'Angle (°)', 0, 90, 1], ['point', 'Taille du point', .3, 1.3, .01], ['force', 'Contraste', .4, 3, .05], ['seuil', 'Seuil des clairs', -.3, .5, .01]]],
+  ['Cadrage', [['yeuxY', 'Hauteur des yeux', .25, .6, .005], ['yeuxEcart', 'Écart des yeux (zoom)', .15, .45, .005]]],
+  ['Œil du milieu', [['oeil', 'Taille', .5, 2, .01], ['oeilY', 'Décalage vertical', -.4, .4, .01]]],
+  ['Joue (efface les yeux)', [['joue', 'Prise vers le bas', .3, 1.2, .01], ['joueTaille', 'Taille', .6, 1.8, .01]]],
+  ['Couleurs', [['papier', 'Papier'], ['encre', 'Encre']]],
+];
+lireReglages();
+const zone = document.getElementById('zone'), sortie = document.getElementById('sortie');
+const style = document.createElement('style'); style.textContent = atelier.css; document.head.append(style);
+const a = ARTISTES.find(x => x.l === 'W');
+atelier.monter(zone, { artiste: { ...a, images: [] }, couleurs: { fond: a.fond, encre: a.encre, accent: a.accent }, reduireMouvement: false, annoncer: () => {}, racine: './' });
+
+const ecart = () => Object.fromEntries(Object.entries(REGLAGES).filter(([k, v]) => v !== DEFAUT[k]));
+function noter() { localStorage.setItem('reglages-w', JSON.stringify(ecart())); sortie.textContent = JSON.stringify(REGLAGES, null, 1); zone.redessiner?.(); }
+const champs = {};
+document.getElementById('curseurs').innerHTML = GROUPES.map(([t, l]) => `<fieldset><legend>${t}</legend>${l.map(([k, n, min, max, pas]) => min === undefined
+  ? `<label>${n}<input type="color" data-k="${k}"><output></output></label>`
+  : `<label>${n}<input type="range" data-k="${k}" min="${min}" max="${max}" step="${pas}"><output></output></label>`).join('')}</fieldset>`).join('');
+document.querySelectorAll('[data-k]').forEach(i => {
+  const k = i.dataset.k, o = i.nextElementSibling; champs[k] = i;
+  const montrer = () => { o.textContent = i.type === 'color' ? '' : (+i.value).toFixed(i.step < 1 ? (i.step < .01 ? 3 : 2) : 0); };
+  i.value = REGLAGES[k]; montrer();
+  i.addEventListener('input', () => { REGLAGES[k] = i.type === 'color' ? i.value : +i.value; montrer(); noter(); });
+});
+document.getElementById('defaut').onclick = () => { Object.assign(REGLAGES, DEFAUT); Object.entries(champs).forEach(([k, i]) => { i.value = REGLAGES[k]; i.dispatchEvent(new Event('input')); }); localStorage.removeItem('reglages-w'); noter(); };
+document.getElementById('copier').onclick = async () => { const t = JSON.stringify(ecart()); try { await navigator.clipboard.writeText(t); sortie.textContent = 'Copié : ' + t; } catch { sortie.textContent = t; } };
+noter();
+
+// « Tester sur une photo » : la photo passe pour une caméra (un flux tiré d'un canvas), l'atelier n'y voit que du feu.
+const vraie = navigator.mediaDevices?.getUserMedia?.bind(navigator.mediaDevices); let toile = null;
+if (navigator.mediaDevices) navigator.mediaDevices.getUserMedia = c => toile ? Promise.resolve(toile.captureStream(30)) : vraie(c);
+document.getElementById('photo').addEventListener('change', e => {
+  const f = e.target.files[0]; if (!f) return; const im = new Image();
+  im.onload = () => {
+    const c = document.createElement('canvas'); c.width = 960; c.height = 720; const g = c.getContext('2d');
+    const k = Math.max(960 / im.width, 720 / im.height), w = im.width * k, h = im.height * k;
+    (function peindre() { g.drawImage(im, (960 - w) / 2, (720 - h) / 2, w, h); requestAnimationFrame(peindre); })();
+    toile = c;
+    const b = zone.querySelector('[data-camera]'); if (b.getAttribute('aria-pressed') === 'true') b.click(); setTimeout(() => b.click(), 100);
+  };
+  im.src = URL.createObjectURL(f);
+});
+</script>
+</body>
+</html>
