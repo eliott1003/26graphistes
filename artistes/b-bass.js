@@ -3,11 +3,10 @@
 // et qu'on glisse dessus, ne laisse voir qu'une bande sur N : en bougeant, les images s'enchaînent et le dessin s'anime.
 // Le code découpe et entrelace tout seul : Eliott fournit seulement les images entières.
 //
-// PROVISOIRE tant que les dessins d'Eliott manquent : l'atelier tourne avec une petite animation de remplacement
-// (un moulin en papier découpé, dessiné en code). Ce n'est pas un dessin de Bass ; l'atelier le dit à l'écran.
-// Quand les dessins arrivent : les ranger dans img/b/ et lister leurs noms, dans l'ordre, dans IMAGES.
+// Les dessins d'Eliott sont dans img/b/ ; leurs noms, dans l'ordre de l'animation, sont dans IMAGES (un nom peut revenir).
+// Si IMAGES est vide ou qu'un fichier manque : animation de remplacement (un moulin dessiné en code), signalée à l'écran.
 
-const IMAGES = []; // ex. ['b-01.svg', 'b-02.svg', 'b-03.svg', 'b-04.svg', 'b-05.svg', 'b-06.svg']
+const IMAGES = ['b-01.svg', 'b-02.svg', 'b-04.svg', 'b-05.svg', 'b-04.svg', 'b-02.svg']; // dessins d'Eliott (13/11). Aller-retour : pas de b-03 reçu, et b-06 est identique à b-02
 const REG = { fente: 5 }; // largeur d'une fente, en millièmes du côté de l'image (réglable avec ?reglages, puis à figer ici)
 const N_REMPLACEMENT = 6;
 const PAPIER = '#f4ecdb', ENCRE = '#0d0d0d';

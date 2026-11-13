@@ -3,9 +3,10 @@
 // jusqu'à remplir la feuille. Micro, ou sans micro : une rythmique à lancer, dont on monte le volume. Chaque touche du
 // clavier fait aussi un bruit de claquettes.
 //
-// L'affiche est encore protégée : elle n'est PAS redessinée ici. La feuille est une composition à nous (les mots du titre,
-// en caractères d'affiche, empilés) qui refait le principe : la taille des lettres dit le volume. L'affiche d'origine doit
-// être visible dans la page de gauche : img/s/ref.jpg, à fournir par Eliott, puis à déclarer dans labo/donnees.js (images:).
+// Avec l'image de l'affiche fournie par Eliott (img/s/ref.jpg, première image de l'artiste dans labo/donnees.js) :
+// la feuille EST son image. Les blocs de texte (ZONES) y sont découpés ; au silence ils sont réduits dans leur case,
+// et chaque bloc grossit avec le bruit jusqu'à déborder. Rien n'est redessiné en code : tout vient de l'image.
+// Sans image : une composition typographique de remplacement (les mots du titre empilés).
 //
 // PROVISOIRE : la bande-son est une rythmique fabriquée en code. Quand Eliott envoie un mp3 libre de droits, le ranger
 // en img/s/son.mp3 et mettre SON = 'img/s/son.mp3'.
@@ -22,6 +23,22 @@ const STYLES = [ // caractères d'affiche du dépôt ; bande : 0 graves, 1 médi
   { police: '400 100px "Alfa Slab"', cote: 'd', rouge: false, bande: 2 },
 ];
 const JAUNE = '#ffe500', NOIR = '#111', ROUGE = '#e8392b';
+// blocs de texte de l'affiche : contours en pixels de l'image d'Eliott (750 × 971), puis la bande de fréquences
+const BASE = [750, 971], FOND_AFFICHE = 'rgb(253,203,47)';
+const R = (a, b, c, d) => [[a, b], [c, b], [c, d], [a, d]];
+const ZONES = [
+  { p: [[228, 30], [732, 30], [732, 164], [650, 176], [585, 184], [560, 198], [462, 198], [462, 219], [410, 219], [410, 230], [360, 230], [360, 196], [228, 196]], b: 0 }, // Bring in 'da Noise, Bring in 'da Funk
+  { p: [[582, 187], [730, 170], [730, 386], [629, 386], [629, 372], [580, 372]], b: 1 }, // Wasp
+  { p: [[452, 200], [578, 200], [578, 372], [482, 372], [482, 325], [452, 325]], b: 2 }, // and other plays
+  { p: [[390, 371], [458, 371], [458, 386], [726, 386], [726, 451], [390, 451]], b: 0 }, // 2 Women
+  { p: R(400, 460, 550, 528), b: 2 }, // The Chang
+  { p: R(566, 462, 726, 613), b: 1 }, // King Lear
+  { p: R(462, 532, 550, 806), b: 2 }, // Fragments
+  { p: R(566, 627, 728, 805), b: 0 }, // Dancing on her knees
+  { p: R(360, 818, 724, 903), b: 1 }, // The Skriker
+  { p: R(22, 913, 728, 955), b: 0 }, // Membership is easy
+].map(z => { const xs = z.p.map(q => q[0]), ys = z.p.map(q => q[1]); return { ...z, cx: (Math.min(...xs) + Math.max(...xs)) / 2, cy: (Math.min(...ys) + Math.max(...ys)) / 2 }; });
+
 const borne = v => Math.max(0, Math.min(1, v));
 
 export default {
@@ -30,6 +47,7 @@ export default {
   css: `
 .sc{display:grid;grid-template-columns:auto minmax(180px,250px);gap:clamp(16px,3cqw,44px);justify-content:center;align-items:end;height:100cqh}
 .sc-feuille{height:min(100cqh,calc((100cqw - 300px)*1.5));aspect-ratio:2/3;background:${JAUNE};box-shadow:0 0 0 1px rgba(0,0,0,.18),0 26px 50px -30px rgba(0,0,0,.55)}
+.sc-feuille.affiche{height:min(100cqh,calc((100cqw - 300px)*1.294))}
 .sc-feuille canvas{display:block;width:100%;height:100%}
 .sc-cote{display:grid;gap:12px;align-content:end;padding-bottom:4px}
 .sc-cote p{margin:0}
@@ -55,7 +73,7 @@ export default {
           <div class="sc-jauge" aria-hidden="true"><i></i></div>
           <p class="note">Fais du bruit : parle, crie, tape dans tes mains. Sans micro, lance ${nomSon} et monte le son. Chaque touche du clavier fait aussi un bruit de claquettes.</p>
           <label class="sc-champ" data-volume hidden>Volume <input type="range" min="0" max="100" step="1" value="60"></label>
-          <label class="sc-champ">Tes mots <input type="text" maxlength="48" autocomplete="off" spellcheck="false" placeholder="Bring in ’da Noise…"></label>
+          <label class="sc-champ" data-mots>Tes mots <input type="text" maxlength="48" autocomplete="off" spellcheck="false" placeholder="Bring in ’da Noise…"></label>
           <div class="sc-boutons">
             <button type="button" class="bouton plein" data-micro aria-pressed="false">Allumer le micro</button>
             <button type="button" class="bouton" data-son aria-pressed="false">Lancer ${nomSon}</button>
@@ -70,7 +88,8 @@ export default {
     const info = zone.querySelector('.etiquette'), jauge = zone.querySelector('.sc-jauge i'), champVolume = zone.querySelector('[data-volume]'), volume = champVolume.querySelector('input');
     const mots = zone.querySelector('input[type=text]'), bMicro = zone.querySelector('[data-micro]'), bSon = zone.querySelector('[data-son]');
     let lignes = MOTS, L = 0, H = 0, dpr = 1, vivant = true, raf = 0, calme = 0;
-    let niv = STYLES.map(() => 0), global = 0;
+    let affiche = null; // l'image d'Eliott, une fois chargée
+    let niv = ZONES.map(() => 0), global = 0;
     // son
     let ac = null, sortie = null, bus = null, anaSortie = null, anaMicro = null, flux = null, srcMicro = null, bruit = null, minuterie = 0, lecteur = null;
     let micro = false, son = false, pas = 0, prochain = 0;
@@ -79,7 +98,19 @@ export default {
     function mesurer() { const r = feuille.getBoundingClientRect(); if (!r.width) return; dpr = Math.min(devicePixelRatio || 1, 2); L = r.width; H = r.height; cv.width = Math.round(L * dpr); cv.height = Math.round(H * dpr); dessiner(); }
     function dessiner() {
       if (!L) return;
-      x.setTransform(dpr, 0, 0, dpr, 0, 0); x.fillStyle = JAUNE; x.fillRect(0, 0, L, H);
+      x.setTransform(dpr, 0, 0, dpr, 0, 0);
+      if (affiche) { // la vraie affiche : chaque bloc de texte, découpé dans l'image, grossit dans sa case
+        const k = L / BASE[0], ky = H / BASE[1];
+        const contour = z => { x.beginPath(); z.p.forEach(([a, b], i) => x[i ? 'lineTo' : 'moveTo'](a * k, b * ky)); x.closePath(); };
+        x.drawImage(affiche, 0, 0, L, H); x.fillStyle = x.strokeStyle = FOND_AFFICHE; x.lineWidth = 1.5;
+        ZONES.forEach(z => { contour(z); x.fill(); x.stroke(); }); // on vide chaque case...
+        ZONES.forEach((z, i) => { // ...puis on y repose son bloc, à la taille du bruit : .47 au silence, 1.12 à plein volume
+          const e = REG.mini + .3 + (.82 - REG.mini) * niv[i];
+          x.save(); x.translate(z.cx * k, z.cy * ky); x.scale(e, e); x.translate(-z.cx * k, -z.cy * ky); contour(z); x.clip(); x.drawImage(affiche, 0, 0, L, H); x.restore();
+        });
+        return;
+      }
+      x.fillStyle = JAUNE; x.fillRect(0, 0, L, H);
       const mx = L * .045, dispo = L - 2 * mx;
       // taille de chaque ligne à plein volume : elle occupe toute la largeur, et l'ensemble toute la hauteur
       const pleins = lignes.map((t, i) => { x.font = STYLES[i % STYLES.length].police; return Math.min(dispo * 100 / (x.measureText(t).width || 1), H * .4); });
@@ -171,7 +202,7 @@ export default {
       ana.getByteFrequencyData(freq);
       const hz = ac.sampleRate / ana.fftSize, moy = (a, b) => { let t = 0, n = 0; for (let i = Math.max(1, Math.round(a / hz)); i < Math.round(b / hz) && i < freq.length; i++) { t += freq[i]; n++; } return n ? t / n / 255 : 0; };
       const bandes = [moy(30, 220), moy(220, 2000), moy(2000, 9000)], haut = Math.max(...bandes, .001);
-      niv = niv.map((n, i) => { const cible = borne(g * (.5 + .62 * bandes[STYLES[i].bande] / haut)); return n + (cible - n) * (cible > n ? .5 : .1); });
+      niv = niv.map((n, i) => { const cible = borne(g * (.5 + .62 * bandes[affiche ? ZONES[i].b : STYLES[i % STYLES.length].bande] / haut)); return n + (cible - n) * (cible > n ? .5 : .1); });
       global += (g - global) * (g > global ? .5 : .1); jauge.style.width = Math.round(global * 100) + '%';
       if (reglages) zone.querySelector('[data-db]').textContent = micro ? Math.round(db) : '—';
       dessiner();
@@ -196,6 +227,8 @@ export default {
       zone.querySelectorAll('[data-r]').forEach(r => r.addEventListener('input', () => { REG[r.dataset.r] = +r.value; dire(); }));
       zone.querySelector('[data-copier]').addEventListener('click', e => { navigator.clipboard?.writeText(`Scher : REG = { plancher: ${REG.plancher}, plafond: ${REG.plafond}, mini: ${REG.mini} }`); e.target.textContent = 'Copié'; });
     }
+    const ref = ctx.artiste.images?.[0];
+    if (ref) { const im = new Image(); im.onload = () => { if (!vivant) return; affiche = im; feuille.style.aspectRatio = `${BASE[0]}/${BASE[1]}`; feuille.classList.add('affiche'); zone.querySelector('[data-mots]').hidden = true; mesurer(); }; im.src = `${ctx.racine}img/s/${ref.f}`; }
     const ro = new ResizeObserver(mesurer); ro.observe(feuille);
     Promise.all(['400 60px Anton', '900 60px "Sofia Cond"', '400 60px "Alfa Slab"'].map(f => document.fonts.load(f))).then(() => vivant && dessiner()).catch(() => {});
     mesurer();

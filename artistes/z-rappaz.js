@@ -83,7 +83,7 @@ export default {
       pieces.forEach(p => {
         const t = document.createElement('canvas'); t.width = Math.ceil(cw + 2 * mg); t.height = Math.ceil(ch + 2 * mg); const g = t.getContext('2d');
         tracer(g, p, mg, mg); g.save(); g.clip(); g.drawImage(source, mg - p.c * cw, mg - p.r * ch, bw, bh); g.restore();
-        g.strokeStyle = 'rgba(0,0,0,.45)'; g.lineWidth = Math.max(1, dpr * .8); g.stroke();
+        g.strokeStyle = 'rgba(255,255,255,.3)'; g.lineWidth = Math.max(1, dpr * .8); g.stroke(); // l'affiche est noire : un liseré clair pour voir les pièces
         p.image = t; p.mg = mg;
       });
     }
