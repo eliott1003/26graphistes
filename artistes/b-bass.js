@@ -9,6 +9,7 @@
 const IMAGES = ['b-01.svg', 'b-02.svg', 'b-04.svg', 'b-05.svg', 'b-04.svg', 'b-02.svg']; // dessins d'Eliott (13/11). Aller-retour : pas de b-03 reçu, et b-06 est identique à b-02
 const REG = { fente: 5 }; // largeur d'une fente, en millièmes du côté de l'image (réglable avec ?reglages, puis à figer ici)
 const N_REMPLACEMENT = 6;
+const IMAGES_SECONDE = 3; // vitesse de « Faire glisser toute seule »
 const PAPIER = '#f4ecdb', ENCRE = '#0d0d0d';
 
 // image de remplacement n° k : un moulin à cinq ailes, coupé aux ciseaux, qui tourne d'un cinquième de tour sur le cycle
@@ -28,7 +29,7 @@ const charger = src => new Promise((ok, non) => { const im = new Image(); im.onl
 export default {
   lettre: 'B',
   css: `
-.bs{display:grid;grid-template-columns:minmax(0,1fr) minmax(170px,240px);gap:clamp(14px,2.4cqw,36px);align-items:end;height:100cqh}
+.bs{display:grid;grid-template-columns:minmax(0,1fr) minmax(150px,200px);gap:clamp(12px,2cqw,28px);align-items:end;height:100cqh}
 .bs-scene{height:100cqh;min-width:0}
 .bs-scene canvas{display:block;width:100%;height:100%;touch-action:none;cursor:default}
 .bs-scene canvas.prise{cursor:grab}
@@ -65,8 +66,8 @@ export default {
     const bAuto = zone.querySelector('[data-auto]');
     let sources = null; // images d'Eliott, ou null : remplacement
     let N = N_REMPLACEMENT, W = 0, H = 0, dpr = 1, cote = 0, w = 1, m = 0, ix = 0, iy = 0;
-    let trame = null, plaque = null, px = 0, py = 0, fx = .46, fy = .06; // place de la plaque, en fraction du côté, par rapport à l'image
-    let vivant = true, raf = 0, prise = null, auto = false, sens = 1, cible = null, dernier = 0, vu = -2;
+    let trame = null, plaque = null, px = 0, py = 0, fx = 0, fy = 0; // place de la plaque, en fraction du côté, par rapport à l'image
+    let vivant = true, raf = 0, prise = null, auto = false, sens = 1, cible = null, dernier = 0, vu = -2, tic = 0;
 
     function image(k, c) {
       const t = document.createElement('canvas'); t.width = t.height = c; const g = t.getContext('2d');
@@ -79,9 +80,9 @@ export default {
     function construire() {
       const r = scene.getBoundingClientRect(); if (!r.width || !r.height) return;
       dpr = Math.min(devicePixelRatio || 1, 2); W = cv.width = Math.round(r.width * dpr); H = cv.height = Math.round(r.height * dpr);
-      cote = Math.round(Math.min(H * .82, W * .6)); // l'image à gauche, la plaque arrive par la droite : c'est en glissant de côté que ça s'anime
+      cote = Math.round(Math.min(H * .9, W * .9)); // l'image aussi grande que possible ; la plaque est posée dessus
       w = Math.max(1, Math.round(cote * REG.fente / 1000)); m = Math.round(cote * .035);
-      ix = Math.round(W * .035 + m); iy = Math.round((H - cote) / 2 + cote * .03);
+      ix = Math.round((W - cote) / 2); iy = Math.round((H - cote) / 2 + cote * .02);
       const images = Array.from({ length: N }, (_, k) => image(k, cote));
       trame = document.createElement('canvas'); trame.width = trame.height = cote; const g = trame.getContext('2d');
       for (let s = 0, i = 0; s < cote; s += w, i++) g.drawImage(images[i % N], s, 0, w, cote, s, 0, w, cote);
@@ -126,16 +127,19 @@ export default {
         const dx = cible.x - px, dy = cible.y - py;
         if (Math.abs(dx) < 2 && Math.abs(dy) < 2) { poser(cible.x, cible.y); cible = null; } else poser(px + dx * .16 + Math.sign(dx), py + dy * .16 + Math.sign(dy));
       } else if (auto) { // puis elle va et vient, à 7 images par seconde
-        const base = ix - m, pas = Math.max(1, Math.round(w * (ctx.reduireMouvement ? 3 : 7) * dt));
-        if (px > base + cote * .07) sens = -1; else if (px < base - cote * .07) sens = 1;
-        poser(px + sens * pas, py);
+        tic += dt; // la plaque saute d'une fente à la fois : chaque dessin reste net, IMAGES_SECONDE fois par seconde
+        if (tic >= 1 / (ctx.reduireMouvement ? 1 : IMAGES_SECONDE)) {
+          tic = 0; const base = ix - m;
+          const suivant = px + w; // toujours dans le même sens ; après N fentes on revient au début : même dessin, boucle sans à-coup
+          poser(suivant >= base + w * N ? base + (suivant - base) % (w * N) : suivant, py);
+        }
       }
       dessiner(); if (cible || auto) raf = requestAnimationFrame(boucle);
     }
     const lancer = () => { if (!raf) { dernier = performance.now(); raf = requestAnimationFrame(boucle); } };
     function modeAuto(oui) {
       auto = oui; bAuto.setAttribute('aria-pressed', oui); bAuto.textContent = oui ? 'Arrêter' : 'Faire glisser toute seule';
-      if (oui) { cible = { x: ix - m, y: iy - m }; info.textContent = `La plaque glisse : les ${N} images s’enchaînent.`; lancer(); } else { vu = -2; dessiner(); }
+      if (oui) { tic = 0; cible = { x: ix - m, y: iy - m }; info.textContent = `La plaque glisse : les ${N} images s’enchaînent.`; lancer(); } else { vu = -2; dessiner(); }
     }
     cv.addEventListener('pointerdown', e => {
       const p = dans(e); if (!p.ok) return;
@@ -150,7 +154,7 @@ export default {
     bAuto.addEventListener('click', () => modeAuto(!auto));
     zone.querySelector('[data-retirer]').addEventListener('click', () => {
       if (auto) modeAuto(false);
-      cible = { x: ix + cote * 1.03, y: iy - m + cote * .06 }; lancer();
+      cible = { x: W - plaque.width * .3, y: iy - m + cote * .1 }; lancer();
     });
     if (reglages) {
       const curseur = zone.querySelector('.bs-reglage input'), sortie = zone.querySelector('.bs-reglage output');

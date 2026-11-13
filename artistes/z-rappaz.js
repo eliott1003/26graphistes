@@ -1,37 +1,26 @@
 // Z · Rolf Rappaz — Comptoir Suisse, Lausanne (1961).
-// Le puzzle du C : les pièces sont éparpillées, on les remet en place. Une pièce lâchée près de sa place s'y enclenche.
+// Le C de l'affiche est déjà un puzzle : 15 pièces, trois par couleur (rouge, vert, bleu, jaune, blanc).
+// L'atelier défait ce puzzle : les vraies pièces sont éparpillées autour de l'affiche, on les remet en place.
 //
-// L'affiche est encore protégée : elle n'est PAS redessinée ici. Le puzzle découpe l'image fournie par Eliott
-// (img/z/ref.jpg, première image de l'artiste dans labo/donnees.js) ; le nombre de pièces se règle avec GRILLE.
-//
-// PROVISOIRE tant que l'image manque : le puzzle découpe un C tout simple, dessiné en code. Ce n'est PAS le C de Rappaz ;
-// l'atelier le dit à l'écran.
+// Rien n'est redessiné : les pièces sont découpées dans l'image fournie par Eliott (img/z/ref.jpg), une par une,
+// suivant leurs contours sur l'affiche (img/z/pieces/01.png à 15.png, à mi-résolution), et la feuille est la même
+// affiche avec le C vidé (img/z/fond.jpg). PIECES donne la place de chaque pièce en pixels de l'image d'origine.
 
-const GRILLE = { colonnes: 3, lignes: 4 }; // à l'arrivée de l'affiche : 4 × 5 si on veut un puzzle plus long
-const FORMAT = 905 / 1280; // format de l'affiche suisse (F4), pour la version provisoire
-const PAPIER = '#ece5d3', ENCRE = '#141414';
+const BASE = [1440, 2160];
+const PIECES = [ // [x, y, largeur, hauteur, couleur], en pixels de img/z/ref.jpg
+  [473, 493, 364, 299, 'rouge'], [141, 1167, 448, 450, 'rouge'], [488, 1507, 432, 223, 'rouge'],
+  [496, 403, 364, 175, 'vert'], [214, 825, 244, 254, 'vert'], [704, 1311, 382, 398, 'vert'],
+  [700, 414, 349, 336, 'bleu'], [83, 814, 247, 314, 'bleu'], [530, 1379, 340, 228, 'bleu'],
+  [887, 443, 324, 377, 'jaune'], [100, 605, 342, 320, 'jaune'], [82, 986, 336, 362, 'jaune'],
+  [229, 448, 386, 425, 'blanc'], [337, 1391, 286, 328, 'blanc'], [1067, 1432, 297, 270, 'blanc'],
+];
+const C = [82, 403, 1364, 1730]; // boîte du C : les pièces éparpillées évitent de s'y poser
 const charger = src => new Promise((ok, non) => { const im = new Image(); im.onload = () => ok(im); im.onerror = non; im.src = src; });
-
-function cProvisoire() { // un C en anneau ouvert à droite, rien de plus
-  const t = document.createElement('canvas'); t.width = 905; t.height = 1280; const g = t.getContext('2d'), w = t.width;
-  g.fillStyle = PAPIER; g.fillRect(0, 0, t.width, t.height);
-  g.strokeStyle = ENCRE; g.lineWidth = w * .22; g.beginPath(); g.arc(w * .5, t.height * .5, w * .36, .66, Math.PI * 2 - .66); g.stroke();
-  return t;
-}
-// un côté de pièce, de A vers B ; s = 0 bord droit, sinon ±1 : la languette part du côté (nx, ny) × s, haute de h
-const FORME = [[.38, 0], [.42, 0, .40, .07, .37, .11], [.30, .22, .44, .27, .50, .27], [.56, .27, .70, .22, .63, .11], [.60, .07, .58, 0, .62, 0]];
-function cote(g, ax, ay, bx, by, s, nx, ny, h) {
-  if (s) {
-    const P = (a, b) => [ax + (bx - ax) * a + nx * s * b * h, ay + (by - ay) * a + ny * s * b * h];
-    FORME.forEach(f => { if (f.length === 2) g.lineTo(...P(f[0], f[1])); else g.bezierCurveTo(...P(f[0], f[1]), ...P(f[2], f[3]), ...P(f[4], f[5])); });
-  }
-  g.lineTo(bx, by);
-}
 
 export default {
   lettre: 'Z',
   css: `
-.rz{display:grid;grid-template-columns:minmax(0,1fr) minmax(170px,230px);gap:clamp(14px,2.4cqw,36px);align-items:end;height:100cqh}
+.rz{display:grid;grid-template-columns:minmax(0,1fr) minmax(160px,210px);gap:clamp(14px,2.4cqw,32px);align-items:end;height:100cqh}
 .rz-scene{height:100cqh;min-width:0}
 .rz-scene canvas{display:block;width:100%;height:100%;touch-action:none}
 .rz-scene canvas.prise{cursor:grab}
@@ -40,18 +29,17 @@ export default {
 .rz-cote p{margin:0}
 .rz-compte{font:900 clamp(40px,7cqw,76px)/.85 "Sofia Cond",Archivo,sans-serif}
 .rz-boutons{display:flex;flex-wrap:wrap;gap:8px}
-@media (max-width:760px){.rz{grid-template-columns:1fr;height:auto}.rz-scene{height:auto;aspect-ratio:10/16}}
+@media (max-width:760px){.rz{grid-template-columns:1fr;height:auto}.rz-scene{height:auto;aspect-ratio:10/14}}
 `,
   monter(zone, ctx) {
-    const { colonnes: C, lignes: R } = GRILLE, total = C * R;
+    const total = PIECES.length;
     zone.innerHTML = `
       <div class="rz">
-        <div class="rz-scene"><canvas data-export aria-label="Un puzzle de ${total} pièces à remettre en place"></canvas></div>
+        <div class="rz-scene"><canvas data-export aria-label="Le C de Rolf Rappaz : ${total} pièces de puzzle à remettre en place"></canvas></div>
         <div class="rz-cote">
-          <p class="rz-compte" aria-hidden="true"></p>
-          <p class="etiquette" aria-live="polite"></p>
-          <p class="note">Attrape une pièce et pose-la à sa place sur la feuille : elle s’enclenche quand elle est au bon endroit.</p>
-          <p class="note" data-provisoire hidden>Version provisoire : ce C n’est pas celui de Rappaz. Le puzzle découpera l’affiche dès qu’Eliott l’aura envoyée.</p>
+          <p class="rz-compte" aria-hidden="true">…</p>
+          <p class="etiquette" aria-live="polite">Chargement des pièces…</p>
+          <p class="note">Sur l’affiche, le C est déjà un puzzle : ${total} pièces, trois par couleur. Attrape une pièce et pose-la à sa place : elle s’enclenche quand elle est au bon endroit.</p>
           <div class="rz-boutons">
             <button type="button" class="bouton plein" data-melanger>Mélanger</button>
             <button type="button" class="bouton" data-modele aria-pressed="false">Montrer le modèle</button>
@@ -61,49 +49,27 @@ export default {
       </div>`;
     const scene = zone.querySelector('.rz-scene'), cv = scene.querySelector('canvas'), x = cv.getContext('2d');
     const compte = zone.querySelector('.rz-compte'), info = zone.querySelector('.etiquette'), bModele = zone.querySelector('[data-modele]');
-    let source = cProvisoire(), pret = false;
-    // sens des languettes : une valeur par bord intérieur, tirée une fois
-    const hz = Array.from({ length: R + 1 }, (_, r) => Array.from({ length: C }, () => r === 0 || r === R ? 0 : Math.random() < .5 ? 1 : -1)); // bords horizontaux
-    const vt = Array.from({ length: R }, () => Array.from({ length: C + 1 }, (_, c) => c === 0 || c === C ? 0 : Math.random() < .5 ? 1 : -1)); // bords verticaux
-    // une pièce : sa case (r, c), sa place libre en fraction de la scène (fx, fy), posée ou non
-    const pieces = Array.from({ length: total }, (_, i) => ({ r: Math.floor(i / C), c: i % C, fx: 0, fy: 0, x: 0, y: 0, posee: false, image: null }));
-    let ordre = pieces.slice(), W = 0, H = 0, dpr = 1, bx = 0, by = 0, bw = 0, bh = 0, cw = 0, ch = 0, tab = 0;
-    let vivant = true, raf = 0, prise = null, modele = false, glisse = []; // glisse : pièces qui vont se ranger toutes seules
+    const pieces = PIECES.map(([px, py, pw, ph, couleur]) => ({ px, py, pw, ph, couleur, fx: 0, fy: 0, x: 0, y: 0, posee: false, image: null, alpha: null, aw: 0 }));
+    let fond = null, modele = null, ordre = pieces.slice(), W = 0, H = 0, dpr = 1, bx = 0, by = 0, bw = 0, bh = 0, k = 1, pret = false;
+    let vivant = true, raf = 0, prise = null, voirModele = false, glisse = [];
 
-    function tracer(g, p, ox, oy) { // le contour de la pièce, son coin haut gauche en (ox, oy)
-      const { r, c } = p; g.beginPath(); g.moveTo(ox, oy);
-      cote(g, ox, oy, ox + cw, oy, hz[r][c], 0, 1, tab);
-      cote(g, ox + cw, oy, ox + cw, oy + ch, vt[r][c + 1], 1, 0, tab);
-      cote(g, ox + cw, oy + ch, ox, oy + ch, hz[r + 1][c], 0, 1, tab);
-      cote(g, ox, oy + ch, ox, oy, vt[r][c], 1, 0, tab);
-      g.closePath();
-    }
-    function decouper() {
-      const mg = Math.ceil(tab * .3) + 2;
-      pieces.forEach(p => {
-        const t = document.createElement('canvas'); t.width = Math.ceil(cw + 2 * mg); t.height = Math.ceil(ch + 2 * mg); const g = t.getContext('2d');
-        tracer(g, p, mg, mg); g.save(); g.clip(); g.drawImage(source, mg - p.c * cw, mg - p.r * ch, bw, bh); g.restore();
-        g.strokeStyle = 'rgba(255,255,255,.3)'; g.lineWidth = Math.max(1, dpr * .8); g.stroke(); // l'affiche est noire : un liseré clair pour voir les pièces
-        p.image = t; p.mg = mg;
-      });
-    }
-    const place = p => ({ x: bx + p.c * cw, y: by + p.r * ch });
-    function eparpiller(p) { // n'importe où dans la scène, mais presque jamais sur la feuille
+    const place = p => ({ x: bx + p.px * k, y: by + p.py * k });
+    function eparpiller(p) { // n'importe où dans la scène, mais presque jamais sur le C
+      const w = p.pw * k, h = p.ph * k, cx0 = bx + C[0] * k, cy0 = by + C[1] * k, cx1 = bx + C[2] * k, cy1 = by + C[3] * k;
       let px = 0, py = 0;
-      for (let essai = 0; essai < 80; essai++) {
-        px = cw * .08 + Math.random() * (W - cw * 1.16); py = ch * .08 + Math.random() * (H - ch * 1.16);
-        const rx = Math.max(0, Math.min(px + cw, bx + bw) - Math.max(px, bx)), ry = Math.max(0, Math.min(py + ch, by + bh) - Math.max(py, by));
-        if (rx * ry < cw * ch * (essai < 60 ? .06 : .4)) break;
+      for (let essai = 0; essai < 120; essai++) {
+        px = Math.random() * Math.max(1, W - w); py = Math.random() * Math.max(1, H - h);
+        const rx = Math.max(0, Math.min(px + w, cx1) - Math.max(px, cx0)), ry = Math.max(0, Math.min(py + h, cy1) - Math.max(py, cy0));
+        if (rx * ry < w * h * (essai < 80 ? .12 : .5)) break;
       }
       p.fx = px / W; p.fy = py / H; p.posee = false;
     }
     function construire() {
-      const r = scene.getBoundingClientRect(); if (!r.width || !r.height) return;
+      const r = scene.getBoundingClientRect(); if (!r.width || !r.height || !fond) return;
       dpr = Math.min(devicePixelRatio || 1, 2); W = cv.width = Math.round(r.width * dpr); H = cv.height = Math.round(r.height * dpr);
-      const format = source.width / source.height, forme = W / H; // scène large : feuille au centre ; presque carrée : en haut à gauche ; étroite : en haut
-      bh = Math.round(forme > 1.35 ? Math.min(H * .9, W * .4 / format) : forme > .8 ? Math.min(H * .7, W * .6 / format) : Math.min(H * .5, W * .74 / format)); bw = Math.round(bh * format);
-      bx = Math.round(forme > 1.35 || forme <= .8 ? (W - bw) / 2 : W * .025); by = Math.round(forme > 1.35 ? (H - bh) / 2 : H * .025);
-      cw = bw / C; ch = bh / R; tab = Math.min(cw, ch); decouper();
+      const format = BASE[0] / BASE[1], large = W / H > .9; // affiche à gauche, les pièces à côté ; sur téléphone, affiche en haut
+      bh = Math.round(large ? H : Math.min(H * .66, W * .8 / format)); bw = Math.round(bh * format);
+      bx = large ? 0 : Math.round((W - bw) / 2); by = 0; k = bw / BASE[0];
       if (!pret) { pret = true; melanger(); return; }
       pieces.forEach(p => { if (p.posee) Object.assign(p, place(p)); else { p.x = p.fx * W; p.y = p.fy * H; } });
       dessiner();
@@ -111,63 +77,68 @@ export default {
     function melanger() { if (!pret) return; glisse = []; pieces.forEach(eparpiller); ordre = pieces.slice().sort(() => Math.random() - .5); pieces.forEach(p => { p.x = p.fx * W; p.y = p.fy * H; }); dire(); dessiner(); }
     function dire(fini) {
       const n = pieces.filter(p => p.posee).length; compte.textContent = `${n} / ${total}`;
-      info.textContent = n === total ? 'Le C est reconstitué.' : n ? `${n} pièce${n > 1 ? 's' : ''} en place sur ${total}.` : 'Les pièces sont éparpillées.';
+      info.textContent = n === total ? 'Le C est reconstitué : c’est l’affiche de 1961.' : n ? `${n} pièce${n > 1 ? 's' : ''} en place sur ${total}.` : 'Les pièces sont éparpillées.';
       if (fini && n === total) ctx.annoncer?.('Le puzzle est terminé.');
     }
     function dessiner() {
       if (!W) return;
-      x.fillStyle = ctx.couleurs.fond; x.fillRect(0, 0, W, H);
-      // la feuille : un creux où poser les pièces
-      x.fillStyle = 'rgba(0,0,0,.28)'; x.fillRect(bx, by, bw, bh);
-      if (modele) { x.globalAlpha = .3; x.drawImage(source, bx, by, bw, bh); x.globalAlpha = 1; }
-      x.strokeStyle = 'rgba(255,255,255,.14)'; x.lineWidth = Math.max(1, dpr); // la trace des cases
-      for (let c = 1; c < C; c++) { x.beginPath(); x.moveTo(bx + c * cw, by); x.lineTo(bx + c * cw, by + bh); x.stroke(); }
-      for (let r = 1; r < R; r++) { x.beginPath(); x.moveTo(bx, by + r * ch); x.lineTo(bx + bw, by + r * ch); x.stroke(); }
-      x.strokeStyle = 'rgba(255,255,255,.4)'; x.strokeRect(bx - .5, by - .5, bw + 1, bh + 1);
-      ordre.filter(p => p.posee).forEach(p => x.drawImage(p.image, Math.round(p.x - p.mg), Math.round(p.y - p.mg)));
+      x.clearRect(0, 0, W, H);
+      x.save(); x.shadowColor = 'rgba(0,0,0,.45)'; x.shadowBlur = 24 * dpr; x.shadowOffsetY = 10 * dpr; x.fillStyle = '#000'; x.fillRect(bx, by, bw, bh); x.restore();
+      x.drawImage(fond, bx, by, bw, bh);
+      if (voirModele) { x.globalAlpha = .28; x.drawImage(modele, bx, by, bw, bh); x.globalAlpha = 1; }
+      ordre.filter(p => p.posee).forEach(p => x.drawImage(p.image, p.x, p.y, p.pw * k, p.ph * k));
       ordre.filter(p => !p.posee).forEach(p => {
         const tenue = prise?.p === p;
-        x.save(); x.shadowColor = 'rgba(0,0,0,.5)'; x.shadowBlur = tab * (tenue ? .16 : .06); x.shadowOffsetY = tab * (tenue ? .08 : .03);
-        x.drawImage(p.image, Math.round(p.x - p.mg), Math.round(p.y - p.mg)); x.restore();
+        x.save(); x.shadowColor = 'rgba(0,0,0,.55)'; x.shadowBlur = (tenue ? 26 : 10) * dpr; x.shadowOffsetY = (tenue ? 14 : 4) * dpr;
+        x.drawImage(p.image, p.x, p.y, p.pw * k, p.ph * k); x.restore();
       });
     }
     function point(e) { const r = cv.getBoundingClientRect(); return { X: (e.clientX - r.left) * W / r.width, Y: (e.clientY - r.top) * H / r.height }; }
-    function sous(X, Y) { // la pièce libre la plus haute sous le pointeur
-      for (let i = ordre.length - 1; i >= 0; i--) { const p = ordre[i]; if (p.posee) continue; tracer(x, p, p.x, p.y); if (x.isPointInPath(X, Y)) return p; }
-      return null;
+    function touche(p, X, Y) { // la pièce est-elle pleine à cet endroit ? (on lit sa transparence)
+      const u = (X - p.x) / (p.pw * k), v = (Y - p.y) / (p.ph * k); if (u < 0 || v < 0 || u >= 1 || v >= 1) return false;
+      const ah = p.alpha.length / p.aw; return p.alpha[Math.floor(v * ah) * p.aw + Math.floor(u * p.aw)] > 60;
     }
+    function sous(X, Y) { for (let i = ordre.length - 1; i >= 0; i--) { const p = ordre[i]; if (!p.posee && touche(p, X, Y)) return p; } return null; }
     cv.addEventListener('pointerdown', e => {
-      const { X, Y } = point(e), p = sous(X, Y); if (!p) return;
+      if (!pret) return; const { X, Y } = point(e), p = sous(X, Y); if (!p) return;
       e.preventDefault(); glisse = glisse.filter(q => q !== p); ordre = ordre.filter(q => q !== p).concat(p); prise = { p, dx: X - p.x, dy: Y - p.y };
       cv.setPointerCapture(e.pointerId); cv.classList.add('tenue'); dessiner();
     });
     cv.addEventListener('pointermove', e => {
-      const { X, Y } = point(e);
+      if (!pret) return; const { X, Y } = point(e);
       if (!prise) { cv.classList.toggle('prise', !!sous(X, Y)); return; }
-      const p = prise.p; p.x = Math.max(-cw * .5, Math.min(W - cw * .5, X - prise.dx)); p.y = Math.max(-ch * .5, Math.min(H - ch * .5, Y - prise.dy)); dessiner();
+      const p = prise.p, w = p.pw * k, h = p.ph * k;
+      p.x = Math.max(-w * .5, Math.min(W - w * .5, X - prise.dx)); p.y = Math.max(-h * .5, Math.min(H - h * .5, Y - prise.dy)); dessiner();
     });
     function lacher() {
       if (!prise) return; const p = prise.p, but = place(p); prise = null; cv.classList.remove('tenue');
-      if (Math.hypot(p.x - but.x, p.y - but.y) < tab * .3) { Object.assign(p, but); p.posee = true; dire(true); } else { p.fx = p.x / W; p.fy = p.y / H; }
+      if (Math.hypot(p.x - but.x, p.y - but.y) < bw * .045) { Object.assign(p, but); p.posee = true; dire(true); } else { p.fx = p.x / W; p.fy = p.y / H; }
       dessiner();
     }
     cv.addEventListener('pointerup', lacher); cv.addEventListener('pointercancel', lacher);
     function boucle() { // les pièces se rangent une à une
       raf = 0; if (!vivant || !glisse.length) return;
       const p = glisse[0], but = place(p), dx = but.x - p.x, dy = but.y - p.y;
-      if (ctx.reduireMouvement || Math.hypot(dx, dy) < 4) { Object.assign(p, but); p.posee = true; glisse.shift(); dire(true); } else { p.x += dx * .42; p.y += dy * .42; }
+      if (ctx.reduireMouvement || Math.hypot(dx, dy) < 4) { Object.assign(p, but); p.posee = true; glisse.shift(); dire(true); } else { p.x += dx * .32; p.y += dy * .32; }
       dessiner(); if (glisse.length) raf = requestAnimationFrame(boucle);
     }
     zone.querySelector('[data-melanger]').addEventListener('click', melanger);
     zone.querySelector('[data-ranger]').addEventListener('click', () => { glisse = ordre.filter(p => !p.posee).reverse(); if (glisse.length && !raf) raf = requestAnimationFrame(boucle); });
-    bModele.addEventListener('click', () => { modele = !modele; bModele.setAttribute('aria-pressed', modele); bModele.textContent = modele ? 'Cacher le modèle' : 'Montrer le modèle'; dessiner(); });
+    bModele.addEventListener('click', () => { voirModele = !voirModele; bModele.setAttribute('aria-pressed', voirModele); bModele.textContent = voirModele ? 'Cacher le modèle' : 'Montrer le modèle'; dessiner(); });
 
-    const im = ctx.artiste.images?.[0];
-    zone.querySelector('[data-provisoire]').hidden = !!im;
-    if (im) charger(`${ctx.racine}img/z/${im.f}`).then(i => { if (!vivant) return; source = i; construire(); melanger(); })
-      .catch(() => { if (!vivant) return; console.warn('Rappaz : image introuvable, C provisoire'); zone.querySelector('[data-provisoire]').hidden = false; });
+    const dossier = `${ctx.racine}img/z/`;
+    Promise.all([charger(dossier + 'fond.jpg'), charger(dossier + 'ref.jpg'), ...pieces.map((_, i) => charger(`${dossier}pieces/${String(i + 1).padStart(2, '0')}.png`))])
+      .then(([f, m, ...ims]) => {
+        if (!vivant) return; fond = f; modele = m;
+        ims.forEach((im, i) => {
+          const p = pieces[i]; p.image = im;
+          const t = document.createElement('canvas'); t.width = im.naturalWidth; t.height = im.naturalHeight; const g = t.getContext('2d'); g.drawImage(im, 0, 0);
+          const d = g.getImageData(0, 0, t.width, t.height).data; p.aw = t.width; p.alpha = new Uint8Array(t.width * t.height); for (let j = 0; j < p.alpha.length; j++) p.alpha[j] = d[j * 4 + 3];
+        });
+        construire();
+      })
+      .catch(() => { if (vivant) info.textContent = 'Les pièces ne se chargent pas : recharge la page.'; });
     const ro = new ResizeObserver(construire); ro.observe(scene);
-    construire();
     return () => { vivant = false; cancelAnimationFrame(raf); ro.disconnect(); };
   },
 };
