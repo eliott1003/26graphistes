@@ -5,7 +5,7 @@
 //  · Ruban    : Today's Italian Publicity and Graphic Design (affiche, Londres, 1967). Un ruban rayé blanc sur fond noir suit la souris
 //               ou l'index, tourne en vraies courbes (rayon minimal, la tête se dirige comme un volant) et passe sur lui-même.
 // Les œuvres ne sont pas redessinées ici (protégées) : la référence de chaque variante est montrée à côté de la feuille.
-// Webcam : l'index dirige, pincer pouce et index pose (ou trace, pour l'éventail) ; deux mains face à la caméra pendant une seconde effacent tout.
+// Webcam : l'index dirige, pincer pouce et index pose (ou trace, pour l'éventail) ; taper dans ses mains efface tout.
 // Si la caméra ou le modèle manquent, la souris reste. Le modèle de suivi des mains se charge chez Google au premier clic.
 // Valeurs : dans REG ci-dessous. Pour les choisir, ajouter ?reglages à l'adresse : un panneau de curseurs apparaît, avec « Copier les réglages ».
 
@@ -13,9 +13,9 @@ const NOIR = '#0c0c0c', BLANC = '#fbfaf6', PAPIER = '#e8e7e3';
 const PAS = .008, BANDES = 13;          // pas de la tête (largeurs de feuille) ; 7 rayures blanches, 6 noires dans le ruban
 const URL_MAINS = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
 const REG = {                             // valeurs figées (à remplacer par celles qu'Eliott choisit dans ?reglages)
-  eventail: { taille: .15, ecart: .1 },
-  onde: { petit: .1, grand: .42, souris: .26, torsion: 2.4 },
-  ruban: { largeur: .27, longueur: 2.6 },
+  eventail: { taille: .145, ecart: .1 },                       // choisies par Eliott le 13/11 à 3 h 14
+  onde: { petit: .115, grand: .395, souris: .26, torsion: 2.15 },
+  ruban: { largeur: .27, longueur: 3.95 },
 };
 const CURSEURS = {
   eventail: [['taille', 'Taille des carrés', .05, .3, .005], ['ecart', 'Écart entre les carrés', .04, .3, .005]],
@@ -33,7 +33,7 @@ const MODES = {
     note: 'Comme sur l’affiche de 1967 : un ruban rayé suit ta souris, se courbe et passe sur lui-même. Clique pour le poser, puis continue.',
     main: 'L’index dirige ; pince pouce et index pour poser le ruban.' },
 };
-const EFFACER_MS = 1000;                  // deux mains visibles pendant ce temps : tout s'efface
+const CLAP = 1.4, CLAP_MS = 900;          // les deux paumes plus proches que 1,4 paume : on a tapé dans ses mains ; pause avant le suivant
 const borne = (v, a, b) => Math.min(b, Math.max(a, v));
 
 /* La tête avance par petits pas et tourne au plus d'un certain angle par pas : les courbes sont de vrais arcs, jamais plus serrés que rmin. */
@@ -193,12 +193,8 @@ export default {
         x.beginPath(); x.arc(main.pos.x * L, main.pos.y * L, main.pince ? 9 : 13, 0, 7);
         x.lineWidth = 3; x.strokeStyle = rouge; x.stroke(); if (main.pince) { x.fillStyle = rouge; x.fill(); }
       }
-      if (main.deux) {                                                     // deux mains : l'anneau se remplit, puis tout s'efface
-        const p = borne((performance.now() - main.deux) / EFFACER_MS, 0, 1), cx = L / 2, cy = L * H() / 2, r = L * .08;
-        x.beginPath(); x.arc(cx, cy, r, 0, 7); x.fillStyle = 'rgba(12,12,12,.55)'; x.fill();
-        x.beginPath(); x.arc(cx, cy, r * .82, -Math.PI / 2, -Math.PI / 2 + p * Math.PI * 2); x.lineWidth = r * .16; x.strokeStyle = rouge; x.stroke();
-        x.fillStyle = '#fff'; x.font = `600 ${Math.max(11, r * .28)}px Archivo, sans-serif`; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(p < 1 ? 'Effacer' : 'Effacé', cx, cy);
-      }
+      const flash = 1 - (performance.now() - main.clap) / 500;               // tapé dans les mains : un éclair blanc, puis la feuille vide
+      if (flash > 0) { x.fillStyle = `rgba(255,255,255,${(flash * .8).toFixed(3)})`; x.fillRect(0, 0, L, L * H()); }
     }
 
     /* ── avancer ── */
@@ -228,7 +224,7 @@ export default {
       raf = requestAnimationFrame(boucle); if (!vivant) return;
       if (main.modele && video.readyState >= 2) lireMain();
       if (avancer()) sale = true;
-      if (sale || main.deux) { sale = false; peindre(); }
+      if (sale || performance.now() - main.clap < 520) { sale = false; peindre(); }
     }
 
     /* ── actions ── */
@@ -258,7 +254,7 @@ export default {
       const n = mode === 'ruban' ? E.ruban.poses.length : mode === 'onde' ? E.onde.centres.length : E.eventail.chaines.length;
       const mots = { ruban: ['ruban posé', 'rubans posés'], onde: ['tourbillon', 'tourbillons'], eventail: ['éventail', 'éventails'] }[mode];
       info.textContent = main.modele
-        ? (main.vu ? MODES[mode].main + ' Deux mains une seconde : tout s’efface.' : 'Montre ta main face à la caméra.')
+        ? (main.vu ? MODES[mode].main + ' Tape dans tes mains pour tout effacer.' : 'Montre ta main face à la caméra.')
         : (n ? `${n} ${n > 1 ? mots[1] : mots[0]}` : MODES[mode].nom);
     }
     function choisir(m) {
@@ -308,22 +304,23 @@ export default {
     $('[data-vider]').addEventListener('click', effacer);
 
     /* ── la main, à la webcam ── */
-    const main = { modele: null, flux: null, vu: false, pince: false, compte: 0, ts: 0, tv: -1, pos: null, vuA: 0, ouverture: .5, deux: 0, efface: false };
+    const main = { modele: null, flux: null, vu: false, pince: false, compte: 0, ts: 0, tv: -1, pos: null, vuA: 0, ouverture: .5, deux: 0, clap: -1e9, deuxA: -1e9, deuxD: 9 };
     const d2 = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
     function lireMain() {
       if (video.currentTime === main.tv) return;                          // une détection par image de la caméra, pas plus
       main.tv = video.currentTime; main.ts = Math.max(main.ts + 1, performance.now());
       let r; try { r = main.modele.detectForVideo(video, main.ts); } catch { return; }
       const mains = r.landmarks || [], maintenant = performance.now();
-      // deux mains face à la caméra : on compte une seconde, puis tout s'efface (une seule fois, jusqu'à ce qu'on baisse une main)
+      // taper dans ses mains : les deux paumes se rapprochent vite ; au contact, le modèle les voit collées, ou n'en voit plus qu'une
+      const taper = () => { if (maintenant - main.clap < CLAP_MS) return; main.clap = maintenant; main.deuxA = -1e9; effacer(); sale = true; };
       if (mains.length >= 2) {
+        const [a, b] = mains, paume = (d2(a[0], a[9]) + d2(b[0], b[9])) / 2 || .1, d = d2(a[9], b[9]) / paume;
         if (main.pince) { main.pince = false; if (mode === 'eventail') tracer(false); }
-        if (!main.deux && !main.efface) main.deux = maintenant;
-        if (main.deux && !main.efface && maintenant - main.deux >= EFFACER_MS) { effacer(); main.efface = true; setTimeout(() => { main.deux = 0; sale = true; }, 400); }
+        main.deux = 1; main.deuxA = maintenant; main.deuxD = d;
+        if (d < CLAP) taper();
         main.vuA = maintenant; sale = true; return;
       }
-      if (main.deux && !main.efface) { main.deux = 0; sale = true; }
-      main.efface = false;
+      if (main.deux) { main.deux = 0; if (maintenant - main.deuxA < 250 && main.deuxD < 2.6) taper(); }
       const m = mains[0];
       if (!m) { if (main.vu && maintenant - main.vuA > 500) { main.vu = false; main.pos = null; if (main.pince) { main.pince = false; if (mode === 'eventail') tracer(false); } dire(); sale = true; } return; }
       main.vuA = maintenant; if (!main.vu) { main.vu = true; dire(); }
