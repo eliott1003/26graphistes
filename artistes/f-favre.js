@@ -7,7 +7,7 @@
 // PROVISOIRE tant qu'elles manquent : chaque carte porte la lettre en caractère d'imprimerie et le nom du fichier attendu.
 // Quand des images arrivent : les ranger dans img/f/ et écrire leurs lettres dans RECUES (par exemple 'abcdefghijklmnopqrstuvwxyz').
 
-const RECUES = '';        // les lettres dont l'image est dans img/f/
+const RECUES = 'abcdefghijklmnopqrst';        // les lettres dont l'image est dans img/f/
 const EXTENSION = 'jpg';
 const DEPART = 'FAVRE', MAX = 12;
 
