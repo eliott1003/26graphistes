@@ -4,9 +4,7 @@
 // « Mettre sur un sac » : la composition du moment est imprimée sur un sac de la boutique ; les sacs s'alignent
 // dans une vitrine (jusqu'à 4, de tailles différentes, comme les quatre tailles de sacs Saks).
 // Les sacs sont dessinés en code, de façon simple ; ce ne sont pas des photos des vrais sacs.
-// Dans la vitrine, on attrape un sac (souris, ou pincer pouce et index à la webcam) : il pend à la main et se balance ;
-// on lâche, il tombe. Si la caméra ou le modèle de la main ne se chargent pas, la souris reste.
-const URL_MAINS = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
+// Dans la vitrine, on attrape un sac à la souris (ou au doigt) : il pend et se balance ; on lâche, il tombe.
 
 const LOGO = 'img/m/logo.png';
 const N = 8, DUREE = 760, DECALAGE = 5, NOIR = '#000', MAX_SACS = 4;
@@ -31,9 +29,7 @@ export default {
 .bi-scene{position:relative;min-height:0}
 .bi-vitrine canvas{display:block;width:100%;height:100%;min-height:0;touch-action:none;cursor:grab}
 .bi-vitrine canvas.tient{cursor:grabbing}
-.bi-scene video{position:absolute;right:10px;top:10px;width:clamp(110px,18cqw,190px);aspect-ratio:4/3;object-fit:cover;transform:scaleX(-1);border:1.5px solid rgba(255,255,255,.5);opacity:.85;pointer-events:none}
-.bi-scene video[hidden]{display:none}
-.bi-info{position:absolute;left:12px;top:10px;margin:0;font:600 12.5px/1.3 Archivo,sans-serif;color:rgba(255,255,255,.75)}
+
 .bi-vitrine-bas{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
 .bi-vitrine-bas p{margin:0}
 @media (max-width:760px){.bi-tout{height:auto}.bi{grid-template-columns:1fr;height:auto}.bi-cadre{height:auto;width:100%}.bi-vitrine{position:fixed;z-index:50;padding:16px}}
@@ -54,11 +50,10 @@ export default {
           <button type="button" class="bi-voir" data-voir hidden></button>
         </div></div>
         <div class="bi-vitrine" hidden>
-          <div class="bi-scene"><canvas aria-label="La vitrine des sacs : attrape un sac et lâche-le"></canvas><video muted playsinline hidden></video><p class="bi-info" aria-live="polite"></p></div>
+          <div class="bi-scene"><canvas aria-label="La vitrine des sacs : attrape un sac et lâche-le"></canvas></div>
           <div class="bi-vitrine-bas">
             <p class="note">Attrape un sac et lâche-le. Les ${MAX_SACS} derniers sacs restent en vitrine.</p>
             <div class="bi-boutons">
-              <button type="button" class="bouton" data-main aria-pressed="false">Attraper avec la main</button>
               <button type="button" class="bouton" data-vider>Vider la vitrine</button>
               <button type="button" class="bouton plein" data-retour>Retour aux carrés</button>
             </div>
@@ -67,7 +62,7 @@ export default {
       </div>`;
     const cadre = zone.querySelector('.bi-cadre'), cv = cadre.querySelector('canvas'), x = cv.getContext('2d');
     const compte = zone.querySelector('.bi-compte'), voir = zone.querySelector('[data-voir]');
-    const vitrine = zone.querySelector('.bi-vitrine'), vc = vitrine.querySelector('canvas'), video = vitrine.querySelector('video'), info = vitrine.querySelector('.bi-info'), bMain = vitrine.querySelector('[data-main]');
+    const vitrine = zone.querySelector('.bi-vitrine'), vc = vitrine.querySelector('canvas');
     const logo = new Image(); let T = 0, vivant = true, raf = 0, n = 0, pret = false;
     // état : pour chaque case d'arrivée, quel morceau y est posé et sa rotation en quarts de tour
     let etat = Array.from({ length: N * N }, (_, i) => ({ m: i, r: 0 })), anim = null;
@@ -204,11 +199,6 @@ export default {
         else { g.translate(s.cx, s.cy); g.rotate(s.a); sac(g, s.img, -s.w * .5, s.h * .5, s.h, s.no, false); }
         g.restore();
       });
-      // la main
-      if (main.pos) {
-        g.beginPath(); g.arc(main.pos.x, main.pos.y, main.pince ? V.H * .012 : V.H * .02, 0, 7);
-        g.lineWidth = Math.max(2, V.H * .005); g.strokeStyle = '#ff3b30'; g.stroke(); if (main.pince) { g.fillStyle = '#ff3b30'; g.fill(); }
-      }
     }
     function attraper(x, y) {
       if (V.tenu) return;
@@ -231,7 +221,6 @@ export default {
     function pas(t) {
       if (!vivant || vitrine.hidden) { V.raf = 0; return; }
       const dt = Math.min(.033, V.t ? (t - V.t) / 1000 : .016); V.t = t;
-      if (main.modele) lireMain();
       const s = V.tenu;
       if (s && V.pointe) {
         // la main tire le point d'accroche ; le sac pend dessous comme un pendule
@@ -258,51 +247,9 @@ export default {
     function demarrer() { if (!V.raf) { V.t = 0; V.raf = requestAnimationFrame(pas); } }
     const point = e => { const r = vc.getBoundingClientRect(); return { x: (e.clientX - r.left) * V.W / r.width, y: (e.clientY - r.top) * V.H / r.height }; };
     vc.addEventListener('pointerdown', e => { const p = point(e); attraper(p.x, p.y); if (V.tenu) { vc.setPointerCapture(e.pointerId); e.preventDefault(); } });
-    vc.addEventListener('pointermove', e => { if (V.tenu && !main.pince) V.pointe = point(e); });
-    vc.addEventListener('pointerup', () => { if (!main.pince) lacher(); });
-    vc.addEventListener('pointercancel', () => { if (!main.pince) lacher(); });
-
-    /* ── la main, à la webcam (même réglage que l'atelier Grignani) ── */
-    const main = { modele: null, flux: null, pince: false, compte: 0, ts: 0, tv: -1, pos: null, vuA: 0 };
-    function direMain(t) { info.textContent = t ?? (main.modele ? (main.pos ? 'Pince pouce et index sur un sac pour l’attraper, ouvre pour le lâcher.' : 'Montre ta main face à la caméra.') : ''); }
-    function lireMain() {
-      if (video.currentTime === main.tv) return;
-      main.tv = video.currentTime; main.ts = Math.max(main.ts + 1, performance.now());
-      let r; try { r = main.modele.detectForVideo(video, main.ts); } catch { return; }
-      const m = r.landmarks?.[0], maintenant = performance.now();
-      if (!m) { if (main.pos && maintenant - main.vuA > 500) { main.pos = null; if (main.pince) { main.pince = false; lacher(); } direMain(); } return; }
-      if (!main.pos) { main.vuA = maintenant; main.pos = { x: 0, y: 0 }; direMain(); } main.vuA = maintenant;
-      // le point de pince : entre le pouce et l'index, en miroir, un peu agrandi pour atteindre les bords
-      const z = 1.35, mx = (m[4].x + m[8].x) / 2, my = (m[4].y + m[8].y) / 2;
-      const px = Math.max(0, Math.min(1, (.5 - mx) * z + .5)) * V.W, py = Math.max(0, Math.min(1, (my - .5) * z + .5)) * V.H;
-      main.pos = main.pos.x ? { x: main.pos.x + (px - main.pos.x) * .55, y: main.pos.y + (py - main.pos.y) * .55 } : { x: px, y: py };
-      if (main.pince) V.pointe = { ...main.pos };
-      const taille = Math.hypot(m[0].x - m[9].x, m[0].y - m[9].y) || .1, ecart = Math.hypot(m[4].x - m[8].x, m[4].y - m[8].y) / taille;
-      main.compte = ecart < .3 ? main.compte + 1 : 0;
-      if (!main.pince && main.compte >= 2) { main.pince = true; attraper(main.pos.x, main.pos.y); }
-      else if (main.pince && ecart > .5) { main.pince = false; lacher(); }
-    }
-    function couperCamera() {
-      main.flux?.getTracks().forEach(p => p.stop()); main.flux = null; main.modele?.close?.(); main.modele = null; main.pos = null;
-      if (main.pince) { main.pince = false; lacher(); }
-      video.hidden = true; bMain.textContent = 'Attraper avec la main'; bMain.setAttribute('aria-pressed', 'false'); direMain('');
-    }
-    bMain.addEventListener('click', async () => {
-      if (main.modele || main.flux) { couperCamera(); return; }
-      bMain.disabled = true; direMain('Chargement du suivi de la main…');
-      try {
-        main.flux = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480, facingMode: 'user' } });
-        video.srcObject = main.flux; await video.play(); video.hidden = false;
-        const { FilesetResolver, HandLandmarker } = await import(`${ctx.racine}vendor/mediapipe/vision_bundle.mjs`);
-        const fs = await FilesetResolver.forVisionTasks(`${ctx.racine}vendor/mediapipe/wasm`);
-        const options = delegate => ({ baseOptions: { modelAssetPath: URL_MAINS, delegate }, runningMode: 'VIDEO', numHands: 1,
-          minHandDetectionConfidence: .4, minHandPresenceConfidence: .4, minTrackingConfidence: .4 });
-        let m; try { m = await HandLandmarker.createFromOptions(fs, options('GPU')); } catch { m = await HandLandmarker.createFromOptions(fs, options('CPU')); }
-        if (!vivant || !main.flux) { m.close?.(); return; }
-        main.modele = m; bMain.textContent = 'Arrêter la caméra'; bMain.setAttribute('aria-pressed', 'true'); direMain();
-      } catch (e) { console.warn(e); couperCamera(); direMain('Caméra ou suivi de la main indisponible : attrape les sacs à la souris.'); }
-      bMain.disabled = false;
-    });
+    vc.addEventListener('pointermove', e => { if (V.tenu) V.pointe = point(e); });
+    vc.addEventListener('pointerup', lacher);
+    vc.addEventListener('pointercancel', lacher);
 
     function mettreSurSac() {
       if (!pret) return;
@@ -315,7 +262,7 @@ export default {
       voir.hidden = false; voir.textContent = `Voir la vitrine (${sacs.length} sac${sacs.length > 1 ? 's' : ''})`;
       ctx.annoncer?.(`Sac n° ${sacs.at(-1).no} en vitrine`);
     }
-    function fermerVitrine() { couperCamera(); vitrine.hidden = true; vc.removeAttribute('data-export'); cv.setAttribute('data-export', ''); cadre.focus(); }
+    function fermerVitrine() { vitrine.hidden = true; vc.removeAttribute('data-export'); cv.setAttribute('data-export', ''); cadre.focus(); }
 
     logo.onload = () => { pret = true; peindre(1); };
     logo.src = ctx.racine + LOGO;
@@ -329,6 +276,6 @@ export default {
     vitrine.querySelector('[data-vider]').addEventListener('click', () => { sacs = []; voir.hidden = true; fermerVitrine(); });
     const ro = new ResizeObserver(tailles); ro.observe(cadre); ro.observe(vitrine);
     tailles();
-    return () => { vivant = false; cancelAnimationFrame(raf); cancelAnimationFrame(V.raf); ro.disconnect(); couperCamera(); };
+    return () => { vivant = false; cancelAnimationFrame(raf); cancelAnimationFrame(V.raf); ro.disconnect(); };
   },
 };
