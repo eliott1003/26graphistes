@@ -10,7 +10,7 @@ export const ARTISTES = [
   { l: 'B', id: 'bass', nom: 'Saul Bass', court: 'Bass', dates: '1920 – 1996', pays: 'États-Unis', courant: 'modernisme américain',
     qui: 'Il invente le générique de film moderne (Vertigo, Anatomy of a Murder) et dessine des logos qui durent, comme AT&T ou United Airlines.',
     oeuvre: 'Dessins d’Eliott', geste: 'Glisse la plaque rayée sur l’image pour l’animer.',
-    fond: '#f47b20', encre: '#111111', accent: '#111111' },
+    fond: '#f47b20', encre: '#111111', accent: '#111111', module: '../artistes/b-bass.js' },
   { l: 'C', id: 'cassandre', nom: 'A.M. Cassandre', court: 'Cassandre', dates: '1901 – 1968', pays: 'France', courant: 'Art déco',
     qui: 'Affichiste né à Kharkiv, installé à Paris. Nord Express, Normandie, Dubonnet : des affiches construites comme des architectures.',
     oeuvre: 'Dubonnet, vin tonique au quinquina (série d’affiches, 1932)', geste: 'Tape D-U-B-O-N-N-E-T : l’affiche avance d’un cran par lettre.',
@@ -86,8 +86,8 @@ export const ARTISTES = [
     fond: '#1f70c1', encre: '#ffffff', accent: '#ffffff' },
   { l: 'S', id: 'scher', nom: 'Paula Scher', court: 'Scher', dates: 'née en 1948', pays: 'États-Unis', courant: 'postmodernisme',
     qui: 'Associée de Pentagram depuis 1991. Typographie bruyante pour le Public Theater, logo Citi esquissé sur une serviette, cartes peintes à la main.',
-    oeuvre: 'Bring in ’da Noise, Bring in ’da Funk (1995)', geste: 'Fais du bruit : les textes grossissent.',
-    fond: '#ffe500', encre: '#111111', accent: '#e8392b' },
+    oeuvre: 'Bring in ’da Noise, Bring in ’da Funk (1995)', geste: 'Fais du bruit : plus c’est fort, plus les textes grossissent.',
+    fond: '#ffe500', encre: '#111111', accent: '#e8392b', module: '../artistes/s-scher.js' },
   { l: 'T', id: 'tanaka', nom: 'Ikko Tanaka', court: 'Tanaka', dates: '1930 – 2002', pays: 'Japon', courant: 'modernisme japonais',
     qui: 'Il croise la tradition japonaise et le modernisme : aplats, grille, visages réduits à quelques formes. Il participe aussi à la création de Muji.',
     oeuvre: 'Nihon Buyo (1981)', geste: 'Appuie sur Gravité : les formes tombent.',
@@ -115,8 +115,8 @@ export const ARTISTES = [
     fond: '#efe7d6', encre: '#d7261e', accent: '#111111' },
   { l: 'Z', id: 'rappaz', nom: 'Rolf Rappaz', court: 'Rappaz', dates: '1914 – 1996', pays: 'Suisse', courant: 'style suisse',
     qui: 'Graphiste bâlois. Affiches pour la Foire suisse d’échantillons, Swissair ou le Comptoir suisse ; à la fin des années 1960, il se consacre à la peinture.',
-    oeuvre: 'Comptoir suisse, Lausanne (1961)', geste: 'Reconstitue le C en pièces.',
-    fond: '#2b2b2b', encre: '#ffd60a', accent: '#ffffff' },
+    oeuvre: 'Comptoir suisse, Lausanne (1961)', geste: 'Le C est en pièces : remets-les en place.',
+    fond: '#2b2b2b', encre: '#ffd60a', accent: '#ffffff', module: '../artistes/z-rappaz.js' },
 ];
 
 export const PAR_LETTRE = new Map(ARTISTES.map(a => [a.l, a]));
