@@ -1,25 +1,36 @@
 // A · Adrian Frutiger — le Frutiger, dessiné pour la signalétique de Roissy-Charles-de-Gaulle.
 // L'atelier reprend l'affiche-spécimen choisie par Eliott (img/a/ref.png, 600 × 957 px), même composition, sans l'avion en
 // lettres du bas. Toute l'affiche est doublée d'un remplissage de texte, invisible. Une silhouette d'avion sert de fenêtre :
-// dans la silhouette on voit le texte, autour on voit l'affiche. On attrape l'avion et on le promène ; il s'oriente dans le
-// sens où il va. « Faire voler l'avion » lui fait faire un tour de l'affiche.
+// dans la silhouette on voit le texte, autour on voit l'affiche. Au départ, seule sa queue dépasse dans l'affiche, à la place
+// exacte de l'avion en lettres de l'original. On l'attrape et on le promène ; il se retourne et s'incline selon où il va. « Faire voler l'avion » lui fait faire un tour de l'affiche.
 
 const L0 = 600, H0 = 957;
 const EFFACER = [[250, 636, 600, 957], [0, 776, 250, 957]]; // l'avion en lettres de l'affiche, retiré (px de l'image)
-const DEPART = { x: 430, y: 790, a: Math.PI / 4 };           // l'avion au repos : à la place de l'ancien, nez vers le haut à droite
-const ECHELLE = 1.55;                                          // taille de la silhouette (1 = 200 px d'envergure)
+const DEPART = { x: 380, y: 860, t: 0, sx: 1 };                // l'avion au repos : exactement à la place de celui de l'affiche
 const CORPS = 8.5, INTERLIGNE = 9.6;                          // le texte de remplissage, à la taille du texte de l'affiche
 const TEXTE = 'In 1968 the new Paris airport at Roissy asked Adrian Frutiger for an alphabet for its signs. It had to be read from far away, at an angle, in a hurry, by people walking with a suitcase. He started from his Univers and opened it up: wider counters, a slight slant in the strokes, endings cut straight. The letters were tested on panels, at a distance, half blurred, until each one could not be mistaken for another. The airport opened in 1974 with these signs. Two years later the alphabet was released as a typeface and given his name: Frutiger. It is now found in hospitals, train stations, road signs and on thousands of logos. Clear before being beautiful, made to guide people. ';
 const charger = src => new Promise((ok, non) => { const im = new Image(); im.onload = () => ok(im); im.onerror = non; im.src = src; });
 
-// la silhouette : un avion de ligne vu de dessus, nez vers le haut, centré sur (0, 0) ; demi-contour, l'autre moitié en miroir
-const DEMI = [[0, -100], [7, -94], [11, -82], [11, -28], [96, 14], [96, 28], [11, 8], [11, 58], [38, 78], [38, 88], [4, 82], [0, 92]];
-function trace(g, x, y, a, k) {
-  const pts = [...DEMI, ...DEMI.slice(1, -1).reverse().map(([u, v]) => [-u, v])];
+// la silhouette : un avion de ligne de profil, nez à gauche. Les points sont en px de l'image, dans la position de départ :
+// la dérive et l'arrière du fuselage reprennent exactement le contour de l'avion en lettres de l'affiche (relevé sur ref.png) ;
+// le reste de l'avion (fuselage, nez, aile, réacteur) sort de l'affiche par la gauche et n'apparaît que quand on le déplace.
+const PIVOT = [380, 860]; // le point autour duquel l'avion tourne, et qu'on déplace
+const CORPS_AVION = [[486, 646], [570, 646], [488, 842], [507, 848], [522, 856], [527, 866], [525, 878], [515, 888], [485, 896], [436, 904],
+  [381, 912], [322, 920], [268, 928], [210, 944], [150, 952], [86, 958], [0, 968], [-80, 976], [-520, 976], [-565, 968], [-602, 950],
+  [-626, 926], [-632, 904], [-622, 884], [-598, 866], [-562, 852], [-520, 846], [0, 846], [252, 846], [252, 840]];
+const AILE = [[-300, 950], [-200, 950], [-30, 1035], [-80, 1040]];
+const REACTEUR = [[-330, 990], [-215, 990], [-205, 1003], [-215, 1016], [-330, 1016], [-340, 1003]];
+function trace(g, av) { // av : { x, y, t (inclinaison), sx (1 = nez à gauche, -1 = nez à droite) }
   g.beginPath();
-  pts.forEach(([u, v], i) => { const c = Math.cos(a), s = Math.sin(a), px = x + (u * c - v * s) * k, py = y + (u * s + v * c) * k; i ? g.lineTo(px, py) : g.moveTo(px, py); });
-  g.closePath();
+  for (const poly of [CORPS_AVION, AILE, REACTEUR]) {
+    poly.forEach(([u, v], i) => {
+      const lx = (u - PIVOT[0]) * av.sx, ly = v - PIVOT[1], c = Math.cos(av.t), s = Math.sin(av.t);
+      const px = av.x + lx * c - ly * s, py = av.y + lx * s + ly * c; i ? g.lineTo(px, py) : g.moveTo(px, py);
+    });
+    g.closePath();
+  }
 }
+const trace2 = (g, av, k) => { g.save(); g.scale(k, k); trace(g, av); g.restore(); };
 
 export default {
   lettre: 'A',
@@ -72,17 +83,19 @@ export default {
       if (!fond) return;
       x.drawImage(fond, 0, 0);
       x.save(); x.scale(K, K);
-      if (tenu || vol) { x.save(); x.shadowColor = 'rgba(0,0,0,.28)'; x.shadowBlur = 16; x.shadowOffsetY = 8; trace(x, avion.x, avion.y, avion.a, ECHELLE); x.fillStyle = '#fff'; x.fill(); x.restore(); }
-      trace(x, avion.x, avion.y, avion.a, ECHELLE); x.clip();
+      if (tenu || vol) { x.save(); x.shadowColor = 'rgba(0,0,0,.28)'; x.shadowBlur = 16; x.shadowOffsetY = 8; trace(x, avion); x.fillStyle = '#fff'; x.fill(); x.restore(); }
+      trace(x, avion); x.clip();
       x.drawImage(texte, 0, 0, L0, H0);
       x.restore();
     }
     const point = e => { const r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) * L0 / r.width, y: (e.clientY - r.top) * H0 / r.height }; };
-    const dedans = p => { x.save(); x.setTransform(1, 0, 0, 1, 0, 0); trace(x, avion.x * K, avion.y * K, avion.a, ECHELLE * K); const ok = x.isPointInPath(p.x * K, p.y * K); x.restore(); return ok; };
+    const dedans = p => { x.save(); x.setTransform(1, 0, 0, 1, 0, 0); trace2(x, avion, K); const ok = x.isPointInPath(p.x * K, p.y * K); x.restore(); return ok; };
     const borne = (v, a, b) => Math.max(a, Math.min(b, v));
-    function tourner(dx, dy, mou) { // le nez se tourne vers où va l'avion
+    function tourner(dx, dy, mou) { // l'avion se retourne selon qu'il va à gauche ou à droite, et s'incline vers où il va
       if (Math.hypot(dx, dy) < .5) return;
-      const cible = Math.atan2(dy, dx) + Math.PI / 2; let d = cible - avion.a; d = Math.atan2(Math.sin(d), Math.cos(d)); avion.a += d * mou;
+      if (Math.abs(dx) > .4) avion.sx = dx < 0 ? 1 : -1;
+      const cible = Math.max(-.6, Math.min(.6, Math.atan2(-avion.sx * dy, Math.abs(dx) + .001)));
+      avion.t += (cible - avion.t) * mou;
     }
     cv.addEventListener('pointerdown', e => {
       if (!fond) return; const p = point(e); if (!dedans(p)) return;
@@ -100,7 +113,7 @@ export default {
     // le vol : une boucle sur toute l'affiche, puis retour au départ
     function arreterVol() { vol = null; cancelAnimationFrame(raf); raf = 0; }
     function voler() {
-      const pts = [[avion.x, avion.y], [520, 560], [470, 230], [300, 120], [110, 260], [160, 520], [330, 640], [470, 460], [330, 300], [150, 420], [120, 760], [DEPART.x, DEPART.y]];
+      const pts = [[avion.x, avion.y], [180, 640], [60, 420], [330, 300], [560, 200], [380, 120], [120, 300], [300, 560], [560, 700], [680, 860], [DEPART.x, DEPART.y]];
       vol = { pts, i: 0, t: performance.now() }; info.textContent = 'L’avion fait le tour de l’affiche : à travers lui, le texte défile.';
       const pas = t => {
         if (!vivant || !vol) return;
@@ -110,9 +123,9 @@ export default {
           tourner(dx, dy, .08);
           if (l <= d) { avion.x = a; avion.y = b; vol.i++; d -= l; } else { avion.x += dx / l * d; avion.y += dy / l * d; d = 0; }
         }
-        if (vol.i >= pts.length - 1) { // posé : il reprend son cap de départ
-          let r = DEPART.a - avion.a; r = Math.atan2(Math.sin(r), Math.cos(r)); avion.a += r * .12;
-          if (Math.abs(r) < .01) { avion.a = DEPART.a; vol = null; raf = 0; dessiner(); info.textContent = REPOS; return; }
+        if (vol.i >= pts.length - 1) { // posé : il reprend sa position de départ
+          avion.sx = 1; avion.t += (0 - avion.t) * .15;
+          if (Math.abs(avion.t) < .005) { Object.assign(avion, DEPART); vol = null; raf = 0; dessiner(); info.textContent = REPOS; return; }
         }
         dessiner(); raf = requestAnimationFrame(pas);
       };
