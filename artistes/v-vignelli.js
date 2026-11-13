@@ -40,11 +40,11 @@ export default {
 .vg{display:grid;grid-template-columns:minmax(0,1fr) minmax(180px,240px);gap:clamp(14px,2.4cqw,36px);align-items:end;height:100cqh}
 .vg-scene{height:100cqh;min-width:0;background:${EAU};box-shadow:0 26px 50px -30px rgba(0,0,0,.6)}
 .vg-scene canvas{display:block;width:100%;height:100%;touch-action:none;cursor:ew-resize}
-.vg-cote{display:grid;gap:12px;align-content:end;padding-bottom:4px}
+.vg-cote{display:grid;gap:12px;align-content:end;padding-bottom:4px;min-width:0;overflow:hidden}
 .vg-cote p{margin:0}
 .vg-compte{font:900 clamp(40px,7cqw,76px)/.85 "Sofia Cond",Archivo,sans-serif}
 .vg-curseur{display:grid;gap:6px;font:600 13px/1.3 Archivo,sans-serif}
-.vg-curseur input{width:100%;accent-color:currentColor;min-height:30px}
+.vg-curseur input{width:100%;min-width:0;margin:0;box-sizing:border-box;accent-color:currentColor;min-height:30px}
 .vg-curseur span{display:flex;justify-content:space-between}
 .vg-boutons{display:flex;flex-wrap:wrap;gap:8px}
 @media (max-width:760px){.vg{grid-template-columns:1fr;height:auto}.vg-scene{height:auto;aspect-ratio:3/4}}
