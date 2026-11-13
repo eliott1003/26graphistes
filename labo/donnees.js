@@ -30,7 +30,7 @@ export const ARTISTES = [
     fond: '#f0607a', encre: '#121a3a', accent: '#ffffff' },
   { l: 'G', id: 'grignani', nom: 'Franco Grignani', court: 'Grignani', dates: '1908 – 1999', pays: 'Italie', courant: 'op art',
     qui: 'Peintre et graphiste milanais. Des rayures et des trames qui vibrent, et le logo Woolmark (1964).',
-    oeuvre: 'Today’s Italian Publicity and Graphic Design (1967)', geste: 'Ruban, onde ou éventail : les rayures suivent ta souris, ou ta main.',
+    oeuvre: 'Today’s Italian Publicity and Graphic Design (1967)', geste: 'Éventail, onde ou ruban : les formes suivent ta souris, ou ta main.',
     fond: '#0c0c0c', encre: '#ffffff', accent: '#ffffff', module: '../artistes/g-grignani.js',
     images: [{ f: 'ref.jpg', t: 'Franco Grignani, Today’s Italian Publicity and Graphic Design, affiche d’exposition, Londres, 1967' }, { f: '01.jpg', t: 'Franco Grignani, composition à rayures (titre et date à préciser)' }, { f: '02.jpg', t: 'Franco Grignani, composition à rayures (titre et date à préciser)' }, { f: '03.jpg', t: 'Franco Grignani, couverture de Linea grafica n° 6, novembre-décembre 1965' }, { f: '04.jpg', t: 'Franco Grignani, annonce pour l’imprimerie Alfieri & Lacroix' }] },
   { l: 'H', id: 'bayer', nom: 'Herbert Bayer', court: 'Bayer', dates: '1900 – 1985', pays: 'Autriche, États-Unis', courant: 'Bauhaus',
