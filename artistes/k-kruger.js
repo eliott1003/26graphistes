@@ -192,14 +192,14 @@ export default {
     const R = { ...DEFAUT }; faireLUT(R);
     zone.innerHTML = `
       <div class="kr">
-        <div class="kr-affiche"><canvas data-export aria-label="Ton image : un visage en noir et blanc, ta phrase collée dessus"></canvas>`
+        <div class="kr-affiche"><canvas data-export aria-label="Ton image : un visage en noir et blanc, ta phrase collée dessus"></canvas>
           <details class="kr-reglages" open${REGLAGES ? '' : ' hidden'}><summary>Réglages du noir et blanc</summary>
             <label>Douceur du passage noir / blanc <span data-v="douceur"></span><input type="range" data-r="douceur" min="6" max="60" step="1"></label>
             <label>Milieu (plus haut = plus sombre) <span data-v="milieu"></span><input type="range" data-r="milieu" min="70" max="190" step="1"></label>
             <label>Grain <span data-v="grain"></span><input type="range" data-r="grain" min="0" max="1" step="0.01"></label>
             <label>Taille du grain <span data-v="taille"></span><input type="range" data-r="taille" min="1" max="5" step="0.5"></label>
             <button type="button" data-copier>Copier les réglages</button>
-          </details>`}</div>
+          </details></div>
         <div class="kr-cote">
           ${ref ? `<img class="kr-ref" src="${ctx.racine}img/k/${ref.f}" alt="L’œuvre de Barbara Kruger, 1981">` : ''}
           <div class="kr-groupe"><p class="etiquette" aria-live="polite" data-info></p>
